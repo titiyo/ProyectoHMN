@@ -44,7 +44,8 @@ export class StockService {
 
   // ---- Configuración ----
 
-  crearCategoria(datos: Partial<Categoria>) {
+  // En el alta van las presentaciones iniciales (al menos una), sin id todavía.
+  crearCategoria(datos: Omit<Partial<Categoria>, 'presentaciones'> & { presentaciones: Partial<Presentacion>[] }) {
     return this.http
       .post<Categoria>(`${this.url}/categorias`, datos)
       .pipe(tap(() => this.cargar()));

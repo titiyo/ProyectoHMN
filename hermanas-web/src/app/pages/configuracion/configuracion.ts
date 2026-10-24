@@ -83,18 +83,18 @@ export class Configuracion {
     this.stock.eliminarCategoria(c.id).subscribe(this.alTerminar('Categoría eliminada.'));
   }
 
-  // Una categoría sin presentaciones no se puede vender: se crea con la primera.
+  // Una categoría sin presentaciones no se puede vender: se crea junto con la primera,
+  // en un solo pedido (el backend guarda las dos cosas en una transacción).
   crearCategoria() {
     const n = this.nuevaCategoria;
-    this.stock.crearCategoria({ nombre: n.nombre, porEncargue: n.porEncargue, nota: n.nota || null })
-      .subscribe({
-        next: (c) => {
-          this.stock
-            .crearPresentacion({ categoriaId: c.id, nombre: n.presentacion, unidades: n.unidades, orden: 0 })
-            .subscribe(this.alTerminar(`Categoría "${c.nombre}" creada.`, () => (this.nuevaCategoria = this.categoriaVacia())));
-        },
-        error: (err) => this.avisos.error(err),
-      });
+    this.stock
+      .crearCategoria({
+        nombre: n.nombre,
+        porEncargue: n.porEncargue,
+        nota: n.nota || null,
+        presentaciones: [{ nombre: n.presentacion, unidades: n.unidades, precio: null }],
+      })
+      .subscribe(this.alTerminar(`Categoría "${n.nombre}" creada.`, () => (this.nuevaCategoria = this.categoriaVacia())));
   }
 
   // ---- Presentaciones ----

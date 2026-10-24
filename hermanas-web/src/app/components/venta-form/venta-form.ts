@@ -1,5 +1,6 @@
 import { Component, inject, input, signal } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { StockService } from '../../services/stock.service';
 import { VentasService } from '../../services/ventas.service';
@@ -82,7 +83,8 @@ export class VentaForm {
       if (alcanza) restante.set(variedad.id, hay - pedidas);
 
       const disp = disponible.get(variedad.id) ?? variedad.stock;
-      const reservable = porEncargue ? 0 : Math.min(pedidas, disp);
+      // Se reserva stock aunque sea por encargue (igual que el backend).
+      const reservable = Math.min(pedidas, disp);
       disponible.set(variedad.id, disp - reservable);
 
       const precio = precioEfectivo(variedad, presentacion);
@@ -172,6 +174,9 @@ export class VentaForm {
         error: (err) => {
           this.enviando.set(false);
           this.avisos.error(err);
+          // 409 = el stock cambió desde otro lado y ya no alcanza. Recargo el stock: con
+          // los números nuevos el formulario muestra solo las opciones de encargue.
+          if (err instanceof HttpErrorResponse && err.status === 409) this.stock.cargar();
         },
       });
   }

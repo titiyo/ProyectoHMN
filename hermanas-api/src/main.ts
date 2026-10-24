@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { DuplicadoFilter } from './common/duplicado.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -12,6 +13,9 @@ async function bootstrap() {
     .map((o) => o.trim().replace(/\/$/, '')) // sin barra final: el navegador no la manda
     .filter(Boolean);
   app.enableCors({ origin: origenes?.length ? origenes : true });
+
+  // Nombres repetidos que llegan a la base al mismo tiempo → 409 en vez de 500.
+  app.useGlobalFilters(new DuplicadoFilter());
 
   // Render asigna el puerto en la variable PORT.
   await app.listen(process.env.PORT ?? 3000);

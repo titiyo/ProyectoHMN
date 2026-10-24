@@ -150,7 +150,9 @@ export class VentasService {
       const disponible = new Map(stock);
       for (const l of lineas) {
         let preparada = 0;
-        if (dto.faltante === 'reservar' && !esPorEncargue(l.variedad)) {
+        // También en variedades por encargue: si tienen stock (ej. de un encargue
+        // cancelado ya preparado), ese stock está hecho y se aprovecha.
+        if (dto.faltante === 'reservar') {
           preparada = Math.min(l.pedidas, disponible.get(l.variedad.id)!);
           disponible.set(l.variedad.id, disponible.get(l.variedad.id)! - preparada);
           if (preparada > 0) {
@@ -213,27 +215,39 @@ export class VentasService {
   // Anular, también todo o nada.
   // - Venta de mostrador: devuelve las unidades al stock.
   // - Venta de un encargue: no toca stock; el encargue vuelve a "listo".
+  //
+  // Si llegan dos anulaciones de la misma venta a la vez, solo una puede devolver el stock.
+  // Por eso el orden es: leer → BORRAR → comprobar que se borró → recién ahí devolver.
+  // El DELETE bloquea la fila: la segunda anulación espera a que la primera termine,
+  // y cuando le toca la venta ya no existe → borra 0 filas → 404 y su transacción se
+  // deshace sin haber tocado el stock.
   async remove(id: number) {
-    const venta = await this.findOne(id);
-    await this.dataSource.transaction(async (manager) => {
+    if (id > MAX_INT) throw new NotFoundException(`La venta con ID ${id} no existe.`);
+    const encargueId = await this.dataSource.transaction(async (manager) => {
+      const venta = await manager.findOne(Venta, {
+        where: { id },
+        relations: { detalles: true },
+      });
+      if (!venta) throw new NotFoundException(`La venta con ID ${id} no existe.`);
+
+      // Los renglones se borran solos por el onDelete: 'CASCADE' (ya los tengo leídos).
+      const borrado = await manager.delete(Venta, id);
+      if (borrado.affected === 0) {
+        throw new NotFoundException(`La venta con ID ${id} ya fue anulada.`);
+      }
+
       if (venta.encargueId) {
         await manager.update(Encargue, venta.encargueId, { estado: 'listo' });
       } else {
         for (const detalle of venta.detalles) {
-          await manager.increment(
-            Variedad,
-            { id: detalle.variedadId },
-            'stock',
-            detalle.cantidad,
-          );
+          await manager.increment(Variedad, { id: detalle.variedadId }, 'stock', detalle.cantidad);
         }
       }
-      // Los renglones se borran solos por el onDelete: 'CASCADE'.
-      await manager.delete(Venta, id);
+      return venta.encargueId;
     });
     return {
-      message: venta.encargueId
-        ? `La venta con ID ${id} fue anulada y el encargue ${venta.encargueId} volvió a "listo".`
+      message: encargueId
+        ? `La venta con ID ${id} fue anulada y el encargue ${encargueId} volvió a "listo".`
         : `La venta con ID ${id} fue anulada y el stock devuelto.`,
     };
   }

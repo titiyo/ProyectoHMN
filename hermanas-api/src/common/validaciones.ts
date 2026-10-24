@@ -68,7 +68,13 @@ export function validarEntero(valor: unknown, campo: string): number {
   return valor;
 }
 
-// Precio opcional: null significa "sin precio propio".
+// Precio opcional: null significa "sin precio cargado". Si viene, tiene que ser > 0:
+// un precio en $0 casi siempre es un error de carga y dejaría vender gratis.
 export function validarPrecio(valor: unknown, campo: string): number | null {
-  return valor === null ? null : validarEntero(valor, campo);
+  if (valor === null) return null;
+  const precio = validarEntero(valor, campo);
+  if (precio === 0) {
+    throw new BadRequestException(`${campo} debe ser mayor a 0 (dejalo vacío si todavía no tiene precio)`);
+  }
+  return precio;
 }

@@ -1,6 +1,6 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Categoria } from '../categorias/entities/categoria.entity';
 import { Variedad } from '../variedades/entities/variedad.entity';
 import { Presentacion } from '../presentaciones/entities/presentacion.entity';
@@ -74,27 +74,30 @@ export class SeedService implements OnModuleInit {
   constructor(
     @InjectRepository(Categoria)
     private readonly categoriasRepository: Repository<Categoria>,
-    @InjectRepository(Variedad)
-    private readonly variedadesRepository: Repository<Variedad>,
-    @InjectRepository(Presentacion)
-    private readonly presentacionesRepository: Repository<Presentacion>,
+    private readonly dataSource: DataSource,
   ) {}
 
   // Solo carga si la base está vacía, para no pisar lo que haya cambiado la vendedora.
+  // Todo en UNA transacción: si la API se cae a mitad de la carga, no queda medio menú
+  // (que el próximo arranque no completaría, porque ya vería categorías).
   async onModuleInit() {
     if ((await this.categoriasRepository.count()) > 0) return;
-    for (const dato of MENU) {
-      const categoria = await this.categoriasRepository.save({
-        nombre: dato.nombre,
-        porEncargue: dato.porEncargue,
-        nota: dato.nota,
-      });
-      await this.presentacionesRepository.save(
-        dato.presentaciones.map((p, orden) => ({ ...p, orden, categoriaId: categoria.id })),
-      );
-      await this.variedadesRepository.save(
-        dato.variedades.map((nombre) => ({ nombre, categoriaId: categoria.id })),
-      );
-    }
+    await this.dataSource.transaction(async (manager) => {
+      for (const dato of MENU) {
+        const categoria = await manager.save(Categoria, {
+          nombre: dato.nombre,
+          porEncargue: dato.porEncargue,
+          nota: dato.nota,
+        });
+        await manager.save(
+          Presentacion,
+          dato.presentaciones.map((p, orden) => ({ ...p, orden, categoriaId: categoria.id })),
+        );
+        await manager.save(
+          Variedad,
+          dato.variedades.map((nombre) => ({ nombre, categoriaId: categoria.id })),
+        );
+      }
+    });
   }
 }

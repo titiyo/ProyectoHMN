@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -10,11 +11,13 @@ import {
   Query,
 } from '@nestjs/common';
 import { CategoriasService } from './categorias.service';
-import { CreateCategoriaDto } from './dto/create-categoria.dto';
+import { CreateCategoriaDto, PresentacionInicialDto } from './dto/create-categoria.dto';
 import { UpdateCategoriaDto } from './dto/update-categoria.dto';
 import {
   validarBooleano,
   validarCampos,
+  validarEntero,
+  validarPrecio,
   validarTexto,
   validarTextoOpcional,
 } from '../common/validaciones';
@@ -27,7 +30,8 @@ export class CategoriasController {
 
   // Valida y limpia los campos que vinieron. En el POST nombre es obligatorio.
   private limpiar(dto: UpdateCategoriaDto, esAlta: boolean) {
-    validarCampos(dto, CAMPOS);
+    // "presentaciones" solo en el alta; después se manejan con /presentaciones.
+    validarCampos(dto, esAlta ? [...CAMPOS, 'presentaciones'] : CAMPOS);
     const limpio: UpdateCategoriaDto = {};
     if (esAlta || dto.nombre !== undefined) {
       limpio.nombre = validarTexto(dto.nombre, 'nombre');
@@ -37,6 +41,30 @@ export class CategoriasController {
     }
     if (dto.nota !== undefined) {
       limpio.nota = validarTextoOpcional(dto.nota, 'nota');
+    }
+    if (esAlta) {
+      const lista: unknown = dto.presentaciones;
+      if (!Array.isArray(lista) || lista.length === 0 || lista.length > 10) {
+        throw new BadRequestException(
+          'presentaciones debe ser una lista de 1 a 10 (ej. [{ "nombre": "unidad", "unidades": 1 }])',
+        );
+      }
+      limpio.presentaciones = lista.map((p: PresentacionInicialDto, i) => {
+        validarCampos(p, ['nombre', 'unidades', 'precio']);
+        const unidades = validarEntero(p.unidades, `presentaciones[${i}].unidades`);
+        if (unidades < 1 || unidades > 1000) {
+          throw new BadRequestException(`presentaciones[${i}].unidades debe estar entre 1 y 1000`);
+        }
+        return {
+          nombre: validarTexto(p.nombre, `presentaciones[${i}].nombre`),
+          unidades,
+          precio: p.precio === undefined ? null : validarPrecio(p.precio, `presentaciones[${i}].precio`),
+        };
+      });
+      const nombres = limpio.presentaciones.map((p) => p.nombre.toLowerCase());
+      if (new Set(nombres).size !== nombres.length) {
+        throw new BadRequestException('Hay presentaciones con el mismo nombre.');
+      }
     }
     return limpio;
   }

@@ -41,7 +41,7 @@
             <tr>
               <td><input class="form-control form-control-sm" [(ngModel)]="bp.nombre" aria-label="Nombre" /></td>
               <td><input class="form-control form-control-sm corto" type="number" min="1" [(ngModel)]="bp.unidades" aria-label="Unidades" /></td>
-              <td><input class="form-control form-control-sm precio" type="number" min="0" [(ngModel)]="bp.precio" placeholder="sin precio" aria-label="Precio" /></td>
+              <td><input class="form-control form-control-sm precio" type="number" min="1" [(ngModel)]="bp.precio" placeholder="sin precio" aria-label="Precio" /></td>
               <td class="text-end text-nowrap">
                 <button class="btn btn-sm btn-primary" (click)="guardarPresentacion(p)">Guardar</button>
                 <button class="btn btn-sm btn-outline-danger ms-1" (click)="eliminarPresentacion(p)" aria-label="Eliminar">×</button>
@@ -52,7 +52,7 @@
           <tr class="table-light">
             <td><input class="form-control form-control-sm" [(ngModel)]="np.nombre" placeholder="Nueva (ej. media docena)" aria-label="Nueva presentación" /></td>
             <td><input class="form-control form-control-sm corto" type="number" min="1" [(ngModel)]="np.unidades" aria-label="Unidades" /></td>
-            <td><input class="form-control form-control-sm precio" type="number" min="0" [(ngModel)]="np.precio" placeholder="sin precio" aria-label="Precio" /></td>
+            <td><input class="form-control form-control-sm precio" type="number" min="1" [(ngModel)]="np.precio" placeholder="sin precio" aria-label="Precio" /></td>
             <td class="text-end">
               <button class="btn btn-sm btn-outline-primary" [disabled]="!np.nombre.trim() || !np.unidades" (click)="crearPresentacion(c)">Agregar</button>
             </td>
@@ -94,7 +94,7 @@
               </td>
               @for (p of c.presentaciones; track p.id) {
                 <td>
-                  <input class="form-control form-control-sm precio" type="number" min="0"
+                  <input class="form-control form-control-sm precio" type="number" min="1"
                          [(ngModel)]="bv.precios[p.id]" [disabled]="bv.categoriaId !== v.categoriaId"
                          [placeholder]="p.precio ?? 'sin precio'" [attr.aria-label]="'Precio ' + p.nombre" />
                 </td>

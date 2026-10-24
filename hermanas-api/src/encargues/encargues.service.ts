@@ -124,7 +124,15 @@ export class EncarguesService {
     }
 
     if (nuevo !== 'entregado') {
-      await this.encarguesRepository.update(id, { estado: nuevo });
+      // Condicional: solo si sigue en el estado que leí. Si en el medio lo cancelaron
+      // o lo cambiaron desde otro dispositivo, no piso nada.
+      const r = await this.encarguesRepository.update(
+        { id, estado: encargue.estado },
+        { estado: nuevo },
+      );
+      if (r.affected === 0) {
+        throw new ConflictException('El encargue cambió mientras tanto; recargá la lista.');
+      }
       return { encargue: await this.findOne(id), venta: null };
     }
 
@@ -178,23 +186,43 @@ export class EncarguesService {
   // Cancelar un encargue que todavía no se entregó. Lo ya hecho vuelve al stock:
   //   pendiente → las reservadas (cantidadPreparada)
   //   listo     → todo (está todo preparado)
+  //
+  // Todo pasa dentro de UNA transacción y con el encargue BLOQUEADO (SELECT ... FOR UPDATE):
+  // - Si llegan dos cancelaciones a la vez, la segunda espera; cuando le toca, el encargue
+  //   ya no existe → 404, sin devolver stock dos veces.
+  // - El estado se lee bloqueado, así nadie lo marca "listo" o lo entrega en el medio
+  //   (esos cambios esperan a que termine la cancelación).
   async remove(id: number) {
-    const encargue = await this.findOne(id);
-    if (encargue.estado === 'entregado') {
-      throw new ConflictException(
-        'Un encargue entregado no se puede eliminar; anulá la venta primero.',
-      );
-    }
-    let devueltas = 0;
-    await this.dataSource.transaction(async (manager) => {
-      for (const d of encargue.detalles) {
+    if (id > MAX_INT) throw new NotFoundException(`El encargue con ID ${id} no existe.`);
+    const devueltas = await this.dataSource.transaction(async (manager) => {
+      const encargue = await manager.findOne(Encargue, {
+        where: { id },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!encargue) throw new NotFoundException(`El encargue con ID ${id} no existe.`);
+      if (encargue.estado === 'entregado') {
+        throw new ConflictException(
+          'Un encargue entregado no se puede eliminar; anulá la venta primero.',
+        );
+      }
+      // Los renglones se leen aparte: FOR UPDATE no se puede combinar con un LEFT JOIN.
+      const detalles = await manager.findBy(DetalleEncargue, { encargueId: id });
+
+      // Segunda red de seguridad: si por algún motivo ya no estaba, no se devuelve nada.
+      const borrado = await manager.delete(Encargue, id); // renglones por CASCADE
+      if (borrado.affected === 0) {
+        throw new NotFoundException(`El encargue con ID ${id} ya fue cancelado.`);
+      }
+
+      let total = 0;
+      for (const d of detalles) {
         const vuelven = encargue.estado === 'listo' ? d.cantidad : d.cantidadPreparada;
         if (vuelven > 0) {
           await manager.increment(Variedad, { id: d.variedadId }, 'stock', vuelven);
-          devueltas += vuelven;
+          total += vuelven;
         }
       }
-      await manager.delete(Encargue, id); // renglones por CASCADE
+      return total;
     });
     return {
       message:

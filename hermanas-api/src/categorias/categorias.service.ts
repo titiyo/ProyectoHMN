@@ -4,7 +4,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ILike, Repository } from 'typeorm';
+import { DataSource, ILike, Repository } from 'typeorm';
+import { Presentacion } from '../presentaciones/entities/presentacion.entity';
 import { Categoria } from './entities/categoria.entity';
 import { CreateCategoriaDto } from './dto/create-categoria.dto';
 import { UpdateCategoriaDto } from './dto/update-categoria.dto';
@@ -15,6 +16,7 @@ export class CategoriasService {
   constructor(
     @InjectRepository(Categoria)
     private readonly categoriasRepository: Repository<Categoria>,
+    private readonly dataSource: DataSource,
   ) {}
 
   // 409 si ya hay otra categoría con el mismo nombre (sin contar mayúsculas/espacios).
@@ -30,8 +32,18 @@ export class CategoriasService {
 
   async create(dto: CreateCategoriaDto) {
     await this.verificarNombreLibre(dto.nombre);
-    const nueva = await this.categoriasRepository.save(dto);
-    return this.findOne(nueva.id);
+    const { presentaciones = [], ...datos } = dto;
+    // Categoría + presentaciones juntas: si falla una presentación, no queda
+    // una categoría sin forma de venderse.
+    const id = await this.dataSource.transaction(async (manager) => {
+      const nueva = await manager.save(Categoria, datos);
+      await manager.save(
+        Presentacion,
+        presentaciones.map((p, orden) => ({ ...p, orden, categoriaId: nueva.id })),
+      );
+      return nueva.id;
+    });
+    return this.findOne(id);
   }
 
   // Cada categoría viene con sus presentaciones ordenadas (unidad antes que docena).
