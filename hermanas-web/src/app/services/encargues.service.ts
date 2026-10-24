@@ -2,6 +2,7 @@ import { inject, Injectable, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { tap } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { AvisosService, avisarSiNo401 } from './avisos.service';
 import { Encargue, EstadoEncargue, PorHacer, RenglonPedido, Venta } from '../models';
 
 @Injectable({ providedIn: 'root' })
@@ -9,12 +10,14 @@ export class EncarguesService {
   private http = inject(HttpClient);
   private url = `${environment.apiUrl}/encargues`;
 
+  private avisos = inject(AvisosService);
+
   readonly porHacer = signal<PorHacer>({ variedades: [], total: 0 });
 
   cargarPorHacer() {
     this.http
       .get<PorHacer>(`${this.url}/por-hacer`)
-      .subscribe((p) => this.porHacer.set(p));
+      .subscribe({ next: (p) => this.porHacer.set(p), error: avisarSiNo401(this.avisos) });
   }
 
   listar(estado?: EstadoEncargue) {

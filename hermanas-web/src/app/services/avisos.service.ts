@@ -47,3 +47,11 @@ export function mensajeDeError(err: unknown): string {
   }
   return 'Ocurrió un error inesperado.';
 }
+
+// Para las cargas de fondo: el 401 ya lo maneja el interceptor (manda al login);
+// cualquier otro error se muestra como aviso.
+export function avisarSiNo401(avisos: AvisosService) {
+  return (err: unknown) => {
+    if (!(err instanceof HttpErrorResponse && err.status === 401)) avisos.error(err);
+  };
+}

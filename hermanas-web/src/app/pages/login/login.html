@@ -1,0 +1,32 @@
+<main class="contenedor">
+  <form class="panel tarjeta" (ngSubmit)="entrar()">
+    <div class="logo text-center mb-3">
+      <span class="cursiva">Hermanas</span>
+      <span class="mayus">EMPRENDEDORAS</span>
+    </div>
+    <h1 class="h5 text-center mb-3">Panel de la tienda</h1>
+
+    @if (vencio()) {
+      <div class="alert alert-warning py-2 small">Tu sesión venció. Volvé a ingresar.</div>
+    }
+    @if (error()) {
+      <div class="alert alert-danger py-2 small" role="alert">{{ error() }}</div>
+    }
+
+    <div class="mb-3">
+      <label class="form-label" for="usuario">Usuario</label>
+      <input class="form-control" id="usuario" name="usuario" autocomplete="username"
+             [(ngModel)]="usuario" required autofocus />
+    </div>
+    <div class="mb-3">
+      <label class="form-label" for="password">Contraseña</label>
+      <input class="form-control" id="password" name="password" type="password"
+             autocomplete="current-password" [(ngModel)]="password" required />
+    </div>
+    <button class="btn btn-primary w-100" type="submit"
+            [disabled]="enviando() || !usuario.trim() || !password">
+      {{ enviando() ? 'Ingresando…' : 'Ingresar' }}
+    </button>
+    <p class="text-center mt-3 mb-0"><a routerLink="/" class="small">Ver el catálogo</a></p>
+  </form>
+</main>

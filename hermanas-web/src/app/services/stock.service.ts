@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { Categoria, Variedad } from '../models';
+import { AvisosService, avisarSiNo401 } from './avisos.service';
 
 // Guarda en memoria las categorías y variedades (con su stock).
 // Todos los componentes leen de estos signals: cuando cambian (por un +/-, una venta,
@@ -11,6 +12,7 @@ import { Categoria, Variedad } from '../models';
 export class StockService {
   private http = inject(HttpClient);
   private url = environment.apiUrl;
+  private avisos = inject(AvisosService);
 
   readonly categorias = signal<Categoria[]>([]);
   readonly variedades = signal<Variedad[]>([]);
@@ -27,10 +29,10 @@ export class StockService {
   cargar() {
     this.http
       .get<Categoria[]>(`${this.url}/categorias`)
-      .subscribe((c) => this.categorias.set(c));
+      .subscribe({ next: (c) => this.categorias.set(c), error: avisarSiNo401(this.avisos) });
     this.http
       .get<Variedad[]>(`${this.url}/variedades`)
-      .subscribe((v) => this.variedades.set(v));
+      .subscribe({ next: (v) => this.variedades.set(v), error: avisarSiNo401(this.avisos) });
   }
 
   // Botones +/-. Con la respuesta reemplazo solo esa variedad en la lista.

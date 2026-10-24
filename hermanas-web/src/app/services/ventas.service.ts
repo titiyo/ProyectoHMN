@@ -5,6 +5,7 @@ import { environment } from '../../environments/environment';
 import { Encargue, RenglonPedido, Venta } from '../models';
 import { StockService } from './stock.service';
 import { EncarguesService } from './encargues.service';
+import { AvisosService, avisarSiNo401 } from './avisos.service';
 
 export interface NuevaVenta {
   cliente?: string;
@@ -18,13 +19,17 @@ export class VentasService {
   private http = inject(HttpClient);
   private stock = inject(StockService);
   private encargues = inject(EncarguesService);
+  private avisos = inject(AvisosService);
   private url = `${environment.apiUrl}/ventas`;
 
   // Las últimas ventas del día, para el tablero.
   readonly ultimas = signal<Venta[]>([]);
 
   cargarUltimas() {
-    this.listar(hoy(), hoy()).subscribe((v) => this.ultimas.set(v.slice(0, 6)));
+    this.listar(hoy(), hoy()).subscribe({
+      next: (v) => this.ultimas.set(v.slice(0, 6)),
+      error: avisarSiNo401(this.avisos),
+    });
   }
 
   // desde/hasta en formato dd-mm-yyyy, como los espera la API.

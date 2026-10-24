@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { StockService } from '../services/stock.service';
 import { VentasService } from '../services/ventas.service';
 import { EncarguesService } from '../services/encargues.service';
+import { AuthService } from '../services/auth.service';
 
 // Marco del panel privado: barra de navegación + la página actual adentro.
 @Component({
@@ -15,6 +16,7 @@ export class Panel implements OnInit {
   private stock = inject(StockService);
   private ventas = inject(VentasService);
   private encargues = inject(EncarguesService);
+  protected auth = inject(AuthService);
 
   // Menú hamburguesa en celular. Bootstrap lo haría con su JS; acá alcanza con un signal.
   protected menuAbierto = signal(false);

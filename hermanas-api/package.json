@@ -17,14 +17,18 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "hash": "node scripts/hash-password.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^12.0.1",
     "@nestjs/core": "^11.0.1",
+    "@nestjs/jwt": "^12.0.3",
     "@nestjs/mapped-types": "^12.0.0",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/typeorm": "^12.0.2",
+    "bcryptjs": "^3.0.3",
     "pg": "^8.23.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",

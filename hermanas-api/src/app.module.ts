@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CategoriasModule } from './categorias/categorias.module';
@@ -8,9 +9,13 @@ import { SeedModule } from './seed/seed.module';
 import { VentasModule } from './ventas/ventas.module';
 import { EncarguesModule } from './encargues/encargues.module';
 import { CatalogoModule } from './catalogo/catalogo.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
+    // Lee el archivo .env y lo carga en process.env. Va PRIMERO para que
+    // la configuración de TypeORM de abajo ya vea esas variables.
+    ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       // Si hay DATABASE_URL (Neon en producción) se usa esa; si no, la base local de docker.
@@ -32,6 +37,7 @@ import { CatalogoModule } from './catalogo/catalogo.module';
     VentasModule,
     EncarguesModule,
     CatalogoModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

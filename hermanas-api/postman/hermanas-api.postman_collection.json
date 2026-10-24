@@ -1,16 +1,104 @@
 {
   "info": {
     "name": "Hermanas Emprendedoras API",
-    "description": "Etapas 1 a 5. Cambiar baseUrl para probar contra Render.",
+    "description": "Etapas 1 a 6. Primero correr Auth > Login (completar la variable password): guarda el token y todos los demás requests lo usan. Cambiar baseUrl para probar contra Render.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "baseUrl",
       "value": "http://localhost:3000"
+    },
+    {
+      "key": "usuario",
+      "value": "hermanas"
+    },
+    {
+      "key": "password",
+      "value": ""
+    },
+    {
+      "key": "token",
+      "value": ""
     }
   ],
   "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login (guarda el token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Si el login sale bien, guarda el token en la variable de la colección.",
+                  "if (pm.response.code === 200) {",
+                  "  pm.collectionVariables.set(\"token\", pm.response.json().token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/login",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario\": \"{{usuario}}\",\n  \"password\": \"{{password}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Verificar token",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/auth/yo"
+          }
+        },
+        {
+          "name": "Error 401: contraseña incorrecta",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/login",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario\": \"{{usuario}}\",\n  \"password\": \"incorrecta123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Error 401: sin token",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "url": "{{baseUrl}}/variedades"
+          }
+        }
+      ]
+    },
     {
       "name": "Categorias",
       "item": [
@@ -631,10 +719,23 @@
           "name": "Ver catálogo (sin stock exacto)",
           "request": {
             "method": "GET",
-            "url": "{{baseUrl}}/catalogo"
+            "url": "{{baseUrl}}/catalogo",
+            "auth": {
+              "type": "noauth"
+            }
           }
         }
       ]
     }
-  ]
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  }
 }

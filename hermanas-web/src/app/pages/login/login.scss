@@ -1,0 +1,12 @@
+.contenedor {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.tarjeta {
+  width: min(380px, 100%);
+  height: auto;
+  padding: 2rem 1.5rem;
+}
