@@ -1,5 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { CatalogoService, CategoriaCatalogo } from '../../services/catalogo.service';
 import { mensajeDeError } from '../../services/avisos.service';
 
@@ -12,7 +13,7 @@ const NOTAS: Record<string, string> = {
 // Catálogo público: tarjetas por variedad, agrupadas por categoría. Sin cantidades.
 @Component({
   selector: 'app-catalogo',
-  imports: [CurrencyPipe],
+  imports: [CurrencyPipe, RouterLink],
   templateUrl: './catalogo.html',
   styleUrl: './catalogo.scss',
 })

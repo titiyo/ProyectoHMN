@@ -6,6 +6,18 @@ antes de pasar al siguiente. Todo en planes gratis.
 > La base de producción arranca vacía: el seed carga las categorías y variedades,
 > pero **sin precios ni stock**. Los datos de prueba de tu compu no se suben.
 
+## Estado (24/10/2026)
+
+| Parte    | Servicio | URL / dato | Estado |
+|----------|----------|------------|--------|
+| Base     | Neon (Postgres 16, AWS US East 1, con pooling) | — | ✅ Seed cargado: 2 categorías, 22 variedades, sin precios ni stock |
+| API      | Render (Blueprint `render.yaml`) | https://hermanas-api.onrender.com | ✅ `DATABASE_URL` y `ADMIN_PASSWORD_HASH` cargados, `JWT_SECRET` generado |
+| Front    | Netlify (proyecto `hermanasemprendedoras`) | https://hermanasemprendedoras.netlify.app | ✅ Catálogo, login y panel probados |
+| CORS     | Render → `FRONT_URL` | `https://hermanasemprendedoras.netlify.app` | ⏳ Falta cargarlo (mientras tanto la API acepta cualquier origen) |
+| Dominio  | DigitalPlat + Cloudflare | `hermanas.dpdns.org` (o el que esté libre) | ⏳ Pendiente (paso 6) |
+
+Los pasos 0 a 5 de abajo ya están hechos; quedan como referencia.
+
 ---
 
 ## 0. Subir el código
@@ -44,7 +56,7 @@ Copiá el resultado (empieza con `$2b$10$...`). Usá una contraseña distinta a 
 3. Te pide las variables secretas:
    - `DATABASE_URL` → la connection string de Neon.
    - `ADMIN_PASSWORD_HASH` → el hash del paso 2.
-   - `FRONT_URL` → por ahora `https://hermanas.netlify.app` (se ajusta en el paso 5).
+   - `FRONT_URL` → `https://hermanasemprendedoras.netlify.app` (se puede cargar después, paso 5).
    - `JWT_SECRET` lo genera Render solo.
 4. **Apply**. El primer build tarda unos minutos (ver **Logs**).
 5. Copiá la URL del servicio (arriba a la izquierda), ej. `https://hermanas-api.onrender.com`.
@@ -58,16 +70,16 @@ Copiá el resultado (empieza con `$2b$10$...`). Usá una contraseña distinta a 
 1. Entrar a <https://netlify.com> → **Sign up** con GitHub.
 2. **Add new site → Import an existing project → GitHub** → `ProyectoHMN`.
 3. Netlify lee `netlify.toml` (carpeta, comando y publicación ya están): **Deploy**.
-4. **Site configuration → Change site name** → `hermanas` → queda `https://hermanas.netlify.app`
-   (si está tomado, elegí otro).
+4. **Site configuration → Change site name** → `hermanasemprendedoras`
+   → queda `https://hermanasemprendedoras.netlify.app`.
 
 ## 5. Conectar front y API
 
-1. Si el nombre de Netlify no fue `hermanas`, en Render → servicio → **Environment** →
-   `FRONT_URL` = tu URL de Netlify (sin barra final) → **Save** (la API se reinicia).
-2. Probar en `https://hermanas.netlify.app`:
+1. Render → servicio → **Environment** → `FRONT_URL` =
+   `https://hermanasemprendedoras.netlify.app` (sin barra final) → **Save** (la API se reinicia).
+2. Probar en `https://hermanasemprendedoras.netlify.app`:
    - El catálogo carga.
-   - `/login` con usuario `hermanas` y la contraseña real → entra al panel.
+   - El link **Acceso** del pie del catálogo (o `/login`) con usuario `hermanas` y la contraseña real → entra al panel.
    - **Configuración**: cargar los precios. **Stock**: cargar las cantidades.
 3. Postman: cambiar la variable `baseUrl` a la URL de Render.
 
@@ -84,7 +96,7 @@ Copiá el resultado (empieza con `$2b$10$...`). Usá una contraseña distinta a 
 
    | Tipo  | Nombre | Destino                       |
    |-------|--------|-------------------------------|
-   | CNAME | `@`    | `hermanas.netlify.app`        |
+   | CNAME | `@`    | `hermanasemprendedoras.netlify.app` |
    | CNAME | `api`  | `hermanas-api.onrender.com`   |
 
 5. Netlify → **Domain management → Add a domain** → `hermanas.dpdns.org`.
@@ -92,7 +104,7 @@ Copiá el resultado (empieza con `$2b$10$...`). Usá una contraseña distinta a 
    Esperar a que los dos muestren el certificado como emitido.
 6. Pasar el front al dominio:
    - `hermanas-web/src/environments/environment.ts` → `apiUrl: 'https://api.hermanas.dpdns.org'`
-   - Render → `FRONT_URL` = `https://hermanas.netlify.app,https://hermanas.dpdns.org`
+   - Render → `FRONT_URL` = `https://hermanasemprendedoras.netlify.app,https://hermanas.dpdns.org`
    - commit + push (Netlify y Render se redeployan solos).
 
 ---

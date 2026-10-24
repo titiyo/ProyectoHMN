@@ -109,4 +109,15 @@ main { flex: 1; }
 
   h3 { color: #fff; }
   a { color: #fff; }
+
+  // Link al panel: chico, gris suave y sin subrayado, casi no se nota.
+  // Va dentro de .pie para ganarle a la regla "a { color: #fff }" de arriba.
+  .acceso {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.35);
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible { color: rgba(255, 255, 255, 0.7); }
+  }
 }
