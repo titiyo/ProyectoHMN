@@ -1,0 +1,108 @@
+# Deploy: Neon + Render + Netlify + dominio
+
+Orden: **base (Neon) → API (Render) → front (Netlify) → dominio**. Cada paso se prueba
+antes de pasar al siguiente. Todo en planes gratis.
+
+> La base de producción arranca vacía: el seed carga las categorías y variedades,
+> pero **sin precios ni stock**. Los datos de prueba de tu compu no se suben.
+
+---
+
+## 0. Subir el código
+
+Desde `Documents\hermanas-emprendedoras`:
+
+```
+git add -A
+git commit -m "Etapa 7: preparar deploy"
+git push
+```
+
+## 1. Base de datos en Neon
+
+1. Entrar a <https://neon.tech> → **Sign up** con GitHub.
+2. **Create project**: nombre `hermanas`, región **AWS US East (N. Virginia)**
+   (la misma zona que Render elige abajo, así API y base están cerca).
+3. En el panel del proyecto → **Connect** → copiar la **connection string**
+   (empieza con `postgresql://` y termina con `?sslmode=require`).
+   Es secreta: no la pegues en el código ni en el chat.
+
+## 2. Contraseña real de la vendedora
+
+En `hermanas-api`:
+
+```
+npm run hash -- "la-contraseña-real"
+```
+
+Copiá el resultado (empieza con `$2b$10$...`). Usá una contraseña distinta a la de desarrollo.
+
+## 3. API en Render
+
+1. Entrar a <https://render.com> → **Sign up** con GitHub.
+2. **New → Blueprint** → elegir el repo `ProyectoHMN`. Render lee `render.yaml`.
+3. Te pide las variables secretas:
+   - `DATABASE_URL` → la connection string de Neon.
+   - `ADMIN_PASSWORD_HASH` → el hash del paso 2.
+   - `FRONT_URL` → por ahora `https://hermanas.netlify.app` (se ajusta en el paso 5).
+   - `JWT_SECRET` lo genera Render solo.
+4. **Apply**. El primer build tarda unos minutos (ver **Logs**).
+5. Copiá la URL del servicio (arriba a la izquierda), ej. `https://hermanas-api.onrender.com`.
+6. Probala en el navegador: `https://TU-URL/catalogo` → tiene que mostrar las variedades.
+
+**Si la URL no es exactamente `https://hermanas-api.onrender.com`**: cambiala en
+`hermanas-web/src/environments/environment.ts`, y commit + push.
+
+## 4. Front en Netlify
+
+1. Entrar a <https://netlify.com> → **Sign up** con GitHub.
+2. **Add new site → Import an existing project → GitHub** → `ProyectoHMN`.
+3. Netlify lee `netlify.toml` (carpeta, comando y publicación ya están): **Deploy**.
+4. **Site configuration → Change site name** → `hermanas` → queda `https://hermanas.netlify.app`
+   (si está tomado, elegí otro).
+
+## 5. Conectar front y API
+
+1. Si el nombre de Netlify no fue `hermanas`, en Render → servicio → **Environment** →
+   `FRONT_URL` = tu URL de Netlify (sin barra final) → **Save** (la API se reinicia).
+2. Probar en `https://hermanas.netlify.app`:
+   - El catálogo carga.
+   - `/login` con usuario `hermanas` y la contraseña real → entra al panel.
+   - **Configuración**: cargar los precios. **Stock**: cargar las cantidades.
+3. Postman: cambiar la variable `baseUrl` a la URL de Render.
+
+## 6. Dominio (DigitalPlat + Cloudflare)
+
+1. Buscar "DigitalPlat FreeDomain" (sitio oficial: digitalplat.org) → crear cuenta (email + GitHub) → registrar
+   `hermanas.dpdns.org` (o el nombre que esté libre).
+2. <https://dash.cloudflare.com> → **Add a domain** → `hermanas.dpdns.org` → plan **Free**.
+   Cloudflare te da **dos nameservers**.
+3. En DigitalPlat, pegar esos dos nameservers en el dominio. Esperar 5–15 min hasta que
+   Cloudflare diga **Active**.
+4. Cloudflare → **DNS → Records**, crear dos CNAME, ambos con **Proxy status: DNS only**
+   (nube gris; si queda naranja, Netlify y Render no pueden emitir el certificado HTTPS):
+
+   | Tipo  | Nombre | Destino                       |
+   |-------|--------|-------------------------------|
+   | CNAME | `@`    | `hermanas.netlify.app`        |
+   | CNAME | `api`  | `hermanas-api.onrender.com`   |
+
+5. Netlify → **Domain management → Add a domain** → `hermanas.dpdns.org`.
+   Render → servicio → **Settings → Custom Domains** → `api.hermanas.dpdns.org`.
+   Esperar a que los dos muestren el certificado como emitido.
+6. Pasar el front al dominio:
+   - `hermanas-web/src/environments/environment.ts` → `apiUrl: 'https://api.hermanas.dpdns.org'`
+   - Render → `FRONT_URL` = `https://hermanas.netlify.app,https://hermanas.dpdns.org`
+   - commit + push (Netlify y Render se redeployan solos).
+
+---
+
+## A tener en cuenta
+
+- **Render gratis se duerme** a los 15 minutos sin uso: el primer pedido tarda 30–60 s.
+  El front lo avisa ("esperá un minuto y probá de nuevo").
+- **Cada push a `main` redeploya** la API y el front automáticamente.
+- **`synchronize: true`** crea/ajusta las tablas al arrancar. Antes de **renombrar o borrar**
+  un campo de una entidad, pensalo: TypeORM puede borrar esa columna y sus datos en Neon.
+- **Cambiar la contraseña**: `npm run hash -- "nueva"` → Render → `ADMIN_PASSWORD_HASH` → Save.
+- El subdominio de DigitalPlat es gratis y sirve para la web; no sirve para mail.

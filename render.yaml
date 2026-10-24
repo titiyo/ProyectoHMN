@@ -1,0 +1,29 @@
+# "Blueprint" de Render: describe el servicio de la API para crearlo desde el repo.
+# En Render: New > Blueprint > elegir este repo. Las variables con sync: false
+# las pide Render al crearlo (no se guardan acá porque son secretas).
+services:
+  - type: web
+    name: hermanas-api
+    runtime: node
+    plan: free
+    rootDir: hermanas-api # el repo tiene dos carpetas: la API está acá
+    # --include=dev: con NODE_ENV=production npm saltearía las devDependencies,
+    # y el CLI de Nest (necesario para compilar) es una de ellas.
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: / # endpoint público que responde "Hello World!"
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL # la "connection string" de Neon
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true # Render inventa uno largo y al azar
+      - key: JWT_EXPIRA
+        value: 7d
+      - key: ADMIN_USUARIO
+        value: hermanas
+      - key: ADMIN_PASSWORD_HASH # npm run hash -- "la-contraseña-real"
+        sync: false
+      - key: FRONT_URL # URL(s) del front separadas por coma
+        sync: false

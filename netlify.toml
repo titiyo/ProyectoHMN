@@ -1,0 +1,13 @@
+# Configuración de Netlify para el front. Netlify la lee sola desde la raíz del repo.
+[build]
+  base = "hermanas-web"                 # la carpeta del front
+  command = "npm run build"             # ng build (producción)
+  publish = "dist/hermanas-web/browser" # relativo a "base"
+
+# Angular maneja las rutas en el navegador (/panel, /login...). Si alguien entra
+# directo a /panel/ventas, Netlify no tiene ese archivo: con esta regla devuelve
+# index.html y Angular muestra la página correcta (si no, daría 404).
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
