@@ -1,0 +1,8 @@
+// El color del borde izquierdo indica el estado de un vistazo.
+.encargue { border-left: 5px solid #ccc; }
+.estado-pendiente { border-left-color: #e0a800; .badge { background: #e0a800; } }
+.estado-listo { border-left-color: var(--verde-salvia); .badge { background: var(--verde-salvia); } }
+.estado-entregado { border-left-color: var(--verde-oscuro); opacity: 0.8; .badge { background: var(--verde-oscuro); } }
+
+.nav-pills .nav-link { color: var(--verde-oscuro); }
+.nav-pills .nav-link.active { background: var(--verde-oscuro); color: #fff; }

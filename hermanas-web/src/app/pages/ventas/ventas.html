@@ -1,0 +1,70 @@
+<h1 class="h3">Ventas</h1>
+
+<form class="panel mb-3" (ngSubmit)="buscar()">
+  <div class="row g-2 align-items-end">
+    <div class="col-6 col-md-3">
+      <label class="form-label small mb-1" for="desde">Desde</label>
+      <input class="form-control" type="date" id="desde" name="desde" [(ngModel)]="desde" />
+    </div>
+    <div class="col-6 col-md-3">
+      <label class="form-label small mb-1" for="hasta">Hasta</label>
+      <input class="form-control" type="date" id="hasta" name="hasta" [(ngModel)]="hasta" />
+    </div>
+    <div class="col-auto">
+      <button class="btn btn-primary" type="submit">Filtrar</button>
+      <button class="btn btn-outline-secondary ms-2" type="button" (click)="verTodo()">Ver todo</button>
+    </div>
+    <div class="col text-md-end">
+      <span class="text-muted">{{ ventas().length }} ventas ·</span>
+      <strong class="num"> {{ totalPeriodo() | currency:'ARS':'symbol-narrow':'1.0-0' }}</strong>
+    </div>
+  </div>
+</form>
+
+<section class="panel">
+  @if (cargando()) {
+    <p class="text-muted mb-0">Cargando…</p>
+  } @else {
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr><th>#</th><th>Fecha</th><th>Cliente</th><th class="text-end">Total</th><th></th></tr>
+        </thead>
+        <tbody>
+          @for (v of ventas(); track v.id) {
+            <tr role="button" (click)="alternar(v.id)">
+              <td class="num">{{ v.id }}</td>
+              <td class="num">{{ v.fecha | date:'dd/MM/yy HH:mm' }}</td>
+              <td>
+                {{ v.cliente ?? '—' }}
+                @if (v.encargueId) { <span class="badge text-bg-secondary">encargue #{{ v.encargueId }}</span> }
+              </td>
+              <td class="text-end num">{{ v.total | currency:'ARS':'symbol-narrow':'1.0-0' }}</td>
+              <td class="text-end">
+                <button class="btn btn-sm btn-outline-danger" (click)="$event.stopPropagation(); anular(v)">Anular</button>
+              </td>
+            </tr>
+            @if (abierta() === v.id) {
+              <tr>
+                <td colspan="5" class="bg-light">
+                  <ul class="mb-0 small">
+                    @for (d of v.detalles; track d.id) {
+                      <li>
+                        {{ d.variedad.nombre }} —
+                        {{ d.modo === 'docena' ? enDocenas(d.cantidad) : d.cantidad + ' u' }}
+                        × {{ d.precioUnitario | currency:'ARS':'symbol-narrow':'1.0-0' }}{{ d.modo === 'docena' ? '/doc' : '' }}
+                        = <strong>{{ d.subtotal | currency:'ARS':'symbol-narrow':'1.0-0' }}</strong>
+                      </li>
+                    }
+                  </ul>
+                </td>
+              </tr>
+            }
+          } @empty {
+            <tr><td colspan="5" class="text-muted">No hay ventas en ese período.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

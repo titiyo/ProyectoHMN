@@ -1,0 +1,28 @@
+.categoria {
+  color: var(--verde-oscuro);
+  letter-spacing: 0.05em;
+}
+
+.fila {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: 0.5rem;
+  background: var(--salvia-claro);
+  margin-bottom: 0.3rem;
+
+  &.agotado .cantidad { color: #b02a37; }
+  &.oculta .nombre { opacity: 0.55; font-style: italic; }
+}
+
+.nombre { flex: 1; min-width: 0; }
+
+.cantidad {
+  font-weight: 700;
+  min-width: 2.2rem;
+  text-align: right;
+}
+
+.btn-group .btn { min-width: 2.2rem; background: #fff; }
+.btn-group .btn:hover:not(:disabled) { background: var(--verde-oscuro); }

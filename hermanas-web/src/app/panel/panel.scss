@@ -1,0 +1,15 @@
+.nav-link {
+  font-weight: 600;
+  border-radius: 0.5rem;
+  padding-inline: 0.75rem !important;
+
+  &.active {
+    background: var(--salvia-claro);
+    color: var(--verde-oscuro);
+  }
+}
+
+main {
+  max-width: 1400px;
+  margin-inline: auto;
+}

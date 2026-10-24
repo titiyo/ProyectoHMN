@@ -1,0 +1,99 @@
+<div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Encargues</h1>
+  <button class="btn btn-primary" (click)="mostrarAlta.set(!mostrarAlta())">
+    {{ mostrarAlta() ? 'Cerrar' : '+ Nuevo encargue' }}
+  </button>
+</div>
+
+@if (mostrarAlta()) {
+  <form class="panel mb-3" (ngSubmit)="crear()" style="max-width: 860px">
+    <div class="row g-2 mb-2">
+      <div class="col-sm-6">
+        <label class="form-label small mb-1" for="cli">Cliente</label>
+        <input class="form-control" id="cli" name="cliente" [(ngModel)]="nuevo.cliente" required />
+      </div>
+      <div class="col-sm-6">
+        <label class="form-label small mb-1" for="tel">Teléfono</label>
+        <input class="form-control" id="tel" name="telefono" type="tel" [(ngModel)]="nuevo.telefono" required />
+      </div>
+    </div>
+    @for (d of nuevo.detalles; track $index; let i = $index) {
+      <div class="row g-2 mb-2 align-items-end">
+        <div class="col-12 col-md-6">
+          <select class="form-select" [name]="'v' + i" [(ngModel)]="d.variedadId" aria-label="Variedad">
+            <option [ngValue]="null" disabled>Variedad…</option>
+            @for (g of grupos(); track g.categoria.id) {
+              <optgroup [label]="g.categoria.nombre">
+                @for (v of g.variedades; track v.id) { <option [ngValue]="v.id">{{ v.nombre }}</option> }
+              </optgroup>
+            }
+          </select>
+        </div>
+        <div class="col-4 col-md-2">
+          <input class="form-control" type="number" min="1" [name]="'c' + i" [(ngModel)]="d.cantidad" aria-label="Cantidad" />
+        </div>
+        <div class="col col-md-3">
+          <select class="form-select" [name]="'m' + i" [(ngModel)]="d.modo" aria-label="Unidad o docena">
+            <option value="unidad">unidades</option>
+            <option value="docena">docenas</option>
+          </select>
+        </div>
+        @if (nuevo.detalles.length > 1) {
+          <div class="col-auto">
+            <button type="button" class="btn btn-outline-danger" (click)="nuevo.detalles.splice(i, 1)" aria-label="Quitar">×</button>
+          </div>
+        }
+      </div>
+    }
+    <div class="d-flex justify-content-between">
+      <button type="button" class="btn btn-link px-0" (click)="agregarRenglon()">+ Agregar otra variedad</button>
+      <button type="submit" class="btn btn-primary" [disabled]="!altaValida">Crear encargue</button>
+    </div>
+  </form>
+}
+
+<ul class="nav nav-pills mb-3">
+  @for (f of filtros; track f.texto) {
+    <li class="nav-item">
+      <button class="nav-link" [class.active]="filtro() === f.valor" (click)="elegirFiltro(f.valor)">{{ f.texto }}</button>
+    </li>
+  }
+</ul>
+
+<div class="row g-3">
+  @for (e of encargues(); track e.id) {
+    <div class="col-md-6 col-xl-4">
+      <article class="panel encargue estado-{{ e.estado }}">
+        <div class="d-flex justify-content-between">
+          <div>
+            <strong>#{{ e.id }} · {{ e.cliente }}</strong>
+            <div class="small text-muted">
+              <a [href]="'tel:' + e.telefono">{{ e.telefono }}</a> · {{ e.fecha | date:'dd/MM HH:mm' }}
+            </div>
+          </div>
+          <span class="badge align-self-start">{{ e.estado }}</span>
+        </div>
+
+        <ul class="small my-2 ps-3">
+          @for (d of e.detalles; track d.id) {
+            <li>{{ d.variedad.nombre }}: {{ d.modo === 'docena' ? enDocenas(d.cantidad) : d.cantidad + ' u' }}</li>
+          }
+        </ul>
+
+        @if (e.estado !== 'entregado') {
+          <div class="d-flex gap-2">
+            @if (anterior[e.estado]; as ant) {
+              <button class="btn btn-sm btn-outline-secondary" (click)="mover(e, ant)">← {{ ant }}</button>
+            }
+            @if (siguiente[e.estado]; as sig) {
+              <button class="btn btn-sm btn-primary" (click)="mover(e, sig)">{{ sig === 'entregado' ? 'Entregar' : 'Marcar ' + sig }} →</button>
+            }
+            <button class="btn btn-sm btn-link text-danger ms-auto" (click)="cancelar(e)">Cancelar</button>
+          </div>
+        }
+      </article>
+    </div>
+  } @empty {
+    <p class="text-muted">No hay encargues {{ filtro() ? 'en este estado' : '' }}.</p>
+  }
+</div>

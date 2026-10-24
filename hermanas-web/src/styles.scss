@@ -1,0 +1,48 @@
+// Colores de la marca. Se definen ANTES de importar Bootstrap para que
+// sus botones, alertas y links usen estos valores en vez del azul por defecto.
+$verde-oscuro: #2f5233;
+$verde-salvia: #a3b899;
+$salvia-claro: #e3ebdd;
+$fondo: #f6f7f4;
+
+$primary: $verde-oscuro;
+$secondary: $verde-salvia;
+$body-bg: $fondo;
+$body-color: #1d1d1b;
+$border-radius: 0.6rem;
+$font-family-sans-serif: 'Nunito', system-ui, sans-serif;
+
+@import 'bootstrap/scss/bootstrap';
+
+// Variables CSS para usar en los .scss de cada componente.
+:root {
+  --verde-oscuro: #{$verde-oscuro};
+  --verde-salvia: #{$verde-salvia};
+  --salvia-claro: #{$salvia-claro};
+}
+
+h1, h2, h3, h4, h5 {
+  color: $verde-oscuro;
+  font-weight: 700;
+}
+
+// Tarjeta de sección del panel (stock, venta, por hacer...).
+.panel {
+  background: #fff;
+  border: 1px solid $salvia-claro;
+  border-radius: $border-radius;
+  padding: 1rem;
+  height: 100%;
+}
+
+// "Hermanas" en cursiva, "EMPRENDEDORAS" en mayúsculas.
+.logo {
+  line-height: 1;
+  color: #1d1d1b;
+  text-decoration: none;
+  .cursiva { font-family: 'Great Vibes', cursive; font-size: 1.9rem; display: block; }
+  .mayus { font-size: 0.65rem; letter-spacing: 0.3em; font-weight: 700; }
+}
+
+// Números alineados para que las columnas de stock y precios no bailen.
+.num { font-variant-numeric: tabular-nums; }

@@ -1,0 +1,97 @@
+<h1 class="h3">Configuración</h1>
+
+<!-- ===== Categorías ===== -->
+<section class="panel mb-3">
+  <h2 class="h5">Categorías y precios</h2>
+  <p class="small text-muted">El precio de la categoría se usa para todas sus variedades, salvo las que tengan precio propio.</p>
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead>
+        <tr><th>Nombre</th><th>Por encargue</th><th>$ unidad</th><th>$ docena</th><th></th></tr>
+      </thead>
+      <tbody>
+        @for (c of categorias(); track c.id) {
+          @let b = borradorCat(c);
+          <tr>
+            <td><input class="form-control form-control-sm" [name]="'cn' + c.id" [(ngModel)]="b.nombre" aria-label="Nombre" /></td>
+            <td><input class="form-check-input" type="checkbox" [(ngModel)]="b.porEncargue" aria-label="Por encargue" /></td>
+            <td><input class="form-control form-control-sm precio" type="number" min="0" [(ngModel)]="b.precioUnidad" placeholder="sin precio" aria-label="Precio por unidad" /></td>
+            <td><input class="form-control form-control-sm precio" type="number" min="0" [(ngModel)]="b.precioDocena" placeholder="sin precio" aria-label="Precio por docena" /></td>
+            <td class="text-end text-nowrap">
+              <button class="btn btn-sm btn-primary" (click)="guardarCategoria(c)">Guardar</button>
+              <button class="btn btn-sm btn-outline-danger ms-1" (click)="eliminarCategoria(c)" aria-label="Eliminar">×</button>
+            </td>
+          </tr>
+        }
+        <tr class="table-light">
+          <td><input class="form-control form-control-sm" [(ngModel)]="nuevaCategoria.nombre" placeholder="Nueva categoría" aria-label="Nombre nueva categoría" /></td>
+          <td><input class="form-check-input" type="checkbox" [(ngModel)]="nuevaCategoria.porEncargue" aria-label="Por encargue" /></td>
+          <td><input class="form-control form-control-sm precio" type="number" min="0" [(ngModel)]="nuevaCategoria.precioUnidad" aria-label="Precio por unidad" /></td>
+          <td><input class="form-control form-control-sm precio" type="number" min="0" [(ngModel)]="nuevaCategoria.precioDocena" aria-label="Precio por docena" /></td>
+          <td class="text-end">
+            <button class="btn btn-sm btn-outline-primary" [disabled]="!nuevaCategoria.nombre.trim()" (click)="crearCategoria()">Agregar</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===== Variedades ===== -->
+<section class="panel">
+  <h2 class="h5">Variedades</h2>
+  <p class="small text-muted">Dejá el precio vacío para usar el de la categoría. "Visible" = aparece en el catálogo público.</p>
+
+  @for (g of grupos(); track g.categoria.id) {
+    <h3 class="h6 text-uppercase mt-3">{{ g.categoria.nombre }}</h3>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead>
+          <tr><th>Nombre</th><th>Categoría</th><th>$ unidad</th><th>$ docena</th><th>Visible</th><th></th></tr>
+        </thead>
+        <tbody>
+          @for (v of g.variedades; track v.id) {
+            @let b = borradorVar(v);
+            <tr>
+              <td><input class="form-control form-control-sm" [(ngModel)]="b.nombre" aria-label="Nombre" /></td>
+              <td>
+                <select class="form-select form-select-sm" [(ngModel)]="b.categoriaId" aria-label="Categoría">
+                  @for (c of categorias(); track c.id) { <option [ngValue]="c.id">{{ c.nombre }}</option> }
+                </select>
+              </td>
+              <td><input class="form-control form-control-sm precio" type="number" min="0" [(ngModel)]="b.precioUnidad"
+                         [placeholder]="g.categoria.precioUnidad ?? 'sin precio'" aria-label="Precio por unidad" /></td>
+              <td><input class="form-control form-control-sm precio" type="number" min="0" [(ngModel)]="b.precioDocena"
+                         [placeholder]="g.categoria.precioDocena ?? 'sin precio'" aria-label="Precio por docena" /></td>
+              <td><input class="form-check-input" type="checkbox" [(ngModel)]="b.visible" aria-label="Visible" /></td>
+              <td class="text-end text-nowrap">
+                <button class="btn btn-sm btn-primary" (click)="guardarVariedad(v)">Guardar</button>
+                <button class="btn btn-sm btn-outline-danger ms-1" (click)="eliminarVariedad(v)" aria-label="Eliminar">×</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <h3 class="h6 text-uppercase mt-4">Agregar variedad</h3>
+  <form class="row g-2 align-items-end" (ngSubmit)="crearVariedad()">
+    <div class="col-md-4">
+      <input class="form-control" name="nombre" [(ngModel)]="nuevaVariedad.nombre" placeholder="Nombre" aria-label="Nombre" required />
+    </div>
+    <div class="col-md-3">
+      <select class="form-select" name="categoria" [(ngModel)]="nuevaVariedad.categoriaId" aria-label="Categoría">
+        <option [ngValue]="0" disabled>Categoría…</option>
+        @for (c of categorias(); track c.id) { <option [ngValue]="c.id">{{ c.nombre }}</option> }
+      </select>
+    </div>
+    <div class="col-6 col-md-2">
+      <input class="form-control" type="number" min="0" name="stock" [(ngModel)]="nuevaVariedad.stock" placeholder="Stock" aria-label="Stock inicial" />
+    </div>
+    <div class="col-6 col-md-3">
+      <button class="btn btn-primary w-100" type="submit"
+              [disabled]="!nuevaVariedad.nombre.trim() || !nuevaVariedad.categoriaId">Agregar</button>
+    </div>
+  </form>
+</section>

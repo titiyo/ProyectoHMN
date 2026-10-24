@@ -1,0 +1,97 @@
+<form (ngSubmit)="registrar()">
+  @for (r of renglones; track $index; let i = $index) {
+    <div class="renglon">
+      <div class="row g-2 align-items-end">
+        <div class="col-12" [class.col-md-6]="!compacto()">
+          @if (!compacto() || i === 0) { <label class="form-label small mb-1" [for]="'var' + i">Variedad</label> }
+          <select class="form-select" [id]="'var' + i" [name]="'variedad' + i" [(ngModel)]="r.variedadId" required>
+            <option [ngValue]="null" disabled>Elegir…</option>
+            @for (g of grupos(); track g.categoria.id) {
+              <optgroup [label]="g.categoria.nombre">
+                @for (v of g.variedades; track v.id) {
+                  <option [ngValue]="v.id">
+                    {{ v.nombre }} {{ g.categoria.porEncargue ? '(encargue)' : '(' + v.stock + ')' }}
+                  </option>
+                }
+              </optgroup>
+            }
+          </select>
+        </div>
+        <div class="col-4" [class.col-md-2]="!compacto()">
+          <label class="form-label small mb-1" [for]="'cant' + i">Cant.</label>
+          <input class="form-control num" type="number" min="1" max="10000" [id]="'cant' + i"
+                 [name]="'cantidad' + i" [(ngModel)]="r.cantidad" required />
+        </div>
+        <div class="col" [class.col-md-3]="!compacto()">
+          <label class="form-label small mb-1" [for]="'modo' + i">En</label>
+          <select class="form-select" [id]="'modo' + i" [name]="'modo' + i" [(ngModel)]="r.modo">
+            <option value="unidad">unidades</option>
+            <option value="docena">docenas</option>
+          </select>
+        </div>
+        @if (renglones.length > 1) {
+          <div class="col-auto">
+            <button type="button" class="btn btn-outline-danger" (click)="quitarRenglon(i)" aria-label="Quitar renglón">×</button>
+          </div>
+        }
+      </div>
+
+      <!-- Resumen del renglón: subtotal o qué parte va a encargue -->
+      @if (analizar(r); as a) {
+        <div class="small mt-1">
+          @if (a.faltan === 0) {
+            <span class="text-muted">
+              @if (a.precio !== null) { {{ a.precio | currency:'ARS':'symbol-narrow':'1.0-0' }} c/u → <strong>{{ a.subtotal | currency:'ARS':'symbol-narrow':'1.0-0' }}</strong> }
+              @else { <span class="text-danger">Sin precio por {{ r.modo }} cargado (ver Configuración)</span> }
+            </span>
+          } @else if (a.vendibles === 0) {
+            <span class="text-warning-emphasis">
+              @if (a.variedad.categoria.porEncargue) { Se elabora por encargue: va todo a encargue. }
+              @else { No alcanza el stock (hay {{ a.variedad.stock }}): va todo a encargue. }
+            </span>
+          } @else {
+            <span class="text-warning-emphasis">
+              Hay {{ a.variedad.stock }}: se venden {{ a.vendibles }} y se encargan {{ a.faltan }} unidades.
+            </span>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  @if (!compacto()) {
+    <button type="button" class="btn btn-link px-0" (click)="agregarRenglon()">+ Agregar otra variedad</button>
+  }
+
+  @if (hayFaltante) {
+    <div class="alert alert-warning py-2 mt-2 mb-2">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="encargar" name="encargar" [(ngModel)]="encargarFaltante" />
+        <label class="form-check-label" for="encargar">Vender lo que hay y <strong>encargar lo que falta</strong></label>
+      </div>
+    </div>
+  }
+
+  <!-- El cliente es opcional, salvo que se encargue algo (ahí también hace falta el teléfono). -->
+  @if (!compacto() || hayFaltante) {
+    <div class="row g-2 mt-1">
+      <div class="col-sm-6">
+        <label class="form-label small mb-1" for="cliente">Cliente {{ hayFaltante ? '' : '(opcional)' }}</label>
+        <input class="form-control" id="cliente" name="cliente" [(ngModel)]="cliente" [required]="hayFaltante" />
+      </div>
+      @if (hayFaltante) {
+        <div class="col-sm-6">
+          <label class="form-label small mb-1" for="telefono">Teléfono</label>
+          <input class="form-control" id="telefono" name="telefono" type="tel" [(ngModel)]="telefono" required />
+        </div>
+      }
+    </div>
+  }
+
+  <div class="d-flex align-items-center justify-content-between mt-3">
+    <span class="fs-5">Total: <strong class="num">{{ total | currency:'ARS':'symbol-narrow':'1.0-0' }}</strong></span>
+    <button type="submit" class="btn btn-primary px-4" [disabled]="!puedeEnviar">
+      {{ enviando() ? 'Registrando…' : 'Registrar' }}
+    </button>
+  </div>
+</form>
