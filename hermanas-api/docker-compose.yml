@@ -1,0 +1,26 @@
+﻿# Base local para desarrollo. En producción se usa Neon (Etapa 7).
+# Puertos 5435/8085 para no chocar con los Postgres de otros proyectos.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hermanas-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret123!
+      POSTGRES_DB: hermanas
+    volumes:
+      - hermanas_datos:/var/lib/postgresql/data
+    ports:
+      - '5435:5432'
+
+  adminer:
+    image: adminer
+    container_name: hermanas-adminer
+    restart: always
+    ports:
+      - '8085:8080'
+
+# Volumen de Docker (en Windows una carpeta montada da problemas de permisos).
+volumes:
+  hermanas_datos:

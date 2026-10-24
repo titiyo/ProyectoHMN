@@ -1,0 +1,640 @@
+{
+  "info": {
+    "name": "Hermanas Emprendedoras API",
+    "description": "Etapas 1 a 5. Cambiar baseUrl para probar contra Render.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    }
+  ],
+  "item": [
+    {
+      "name": "Categorias",
+      "item": [
+        {
+          "name": "Listar",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/categorias"
+          }
+        },
+        {
+          "name": "Filtrar por nombre",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/categorias?nombre=soj"
+          }
+        },
+        {
+          "name": "Ver una (con variedades)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/categorias/1"
+          }
+        },
+        {
+          "name": "Crear",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/categorias",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Lenteja\",\n  \"porEncargue\": false,\n  \"precioUnidad\": 1000,\n  \"precioDocena\": 11000\n}"
+            }
+          }
+        },
+        {
+          "name": "Cargar precios",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/categorias/1",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"precioUnidad\": 900,\n  \"precioDocena\": 9800\n}"
+            }
+          }
+        },
+        {
+          "name": "Error 409: nombre repetido",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/categorias",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \" SOJA \"\n}"
+            }
+          }
+        },
+        {
+          "name": "Error 409: eliminar con variedades",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/categorias/1"
+          }
+        },
+        {
+          "name": "Error 404: no existe",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/categorias/999"
+          }
+        },
+        {
+          "name": "Eliminar",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/categorias/3"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Variedades",
+      "item": [
+        {
+          "name": "Listar",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/variedades"
+          }
+        },
+        {
+          "name": "Filtrar por categoría",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/variedades?categoriaId=2"
+          }
+        },
+        {
+          "name": "Filtrar por nombre",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/variedades?nombre=queso"
+          }
+        },
+        {
+          "name": "Filtrar visibles",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/variedades?visible=true"
+          }
+        },
+        {
+          "name": "Ver una",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/variedades/1"
+          }
+        },
+        {
+          "name": "Crear",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/variedades",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Espinaca\",\n  \"categoriaId\": 1,\n  \"stock\": 10\n}"
+            }
+          }
+        },
+        {
+          "name": "Editar (precio propio y ocultar)",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/variedades/1",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"precioUnidad\": 1100,\n  \"visible\": false\n}"
+            }
+          }
+        },
+        {
+          "name": "Stock +12 (una docena)",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/variedades/6/stock",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"delta\": 12\n}"
+            }
+          }
+        },
+        {
+          "name": "Stock -1",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/variedades/6/stock",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"delta\": -1\n}"
+            }
+          }
+        },
+        {
+          "name": "Error 400: stock negativo",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/variedades/6/stock",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"delta\": -1000\n}"
+            }
+          }
+        },
+        {
+          "name": "Error 409: nombre repetido en la categoría",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/variedades",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"cuatro QUESOS\",\n  \"categoriaId\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Error 404: categoría inexistente",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/variedades",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"X\",\n  \"categoriaId\": 999\n}"
+            }
+          }
+        },
+        {
+          "name": "Error 400: id en el body",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/variedades/1",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 5\n}"
+            }
+          }
+        },
+        {
+          "name": "Eliminar",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/variedades/23"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ventas",
+      "item": [
+        {
+          "name": "Registrar venta (docena + unidades)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/ventas",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente\": \"Ana\",\n  \"detalles\": [\n    {\n      \"variedadId\": 6,\n      \"modo\": \"docena\",\n      \"cantidad\": 1\n    },\n    {\n      \"variedadId\": 8,\n      \"modo\": \"unidad\",\n      \"cantidad\": 3\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Registrar venta sin cliente",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/ventas",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"detalles\": [\n    {\n      \"variedadId\": 6,\n      \"modo\": \"unidad\",\n      \"cantidad\": 2\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Venta con faltante → encargue",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/ventas",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente\": \"Ana\",\n  \"telefono\": \"2494111111\",\n  \"encargarFaltante\": true,\n  \"detalles\": [\n    {\n      \"variedadId\": 6,\n      \"modo\": \"unidad\",\n      \"cantidad\": 6\n    },\n    {\n      \"variedadId\": 22,\n      \"modo\": \"docena\",\n      \"cantidad\": 1\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Historial completo",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/ventas"
+          }
+        },
+        {
+          "name": "Historial filtrado por fecha",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/ventas?desde=01-10-2026&hasta=31-10-2026"
+          }
+        },
+        {
+          "name": "Ver una",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/ventas/1"
+          }
+        },
+        {
+          "name": "Error 400: stock insuficiente (no se guarda nada)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/ventas",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"detalles\": [\n    {\n      \"variedadId\": 6,\n      \"modo\": \"unidad\",\n      \"cantidad\": 1\n    },\n    {\n      \"variedadId\": 8,\n      \"modo\": \"unidad\",\n      \"cantidad\": 9999\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Error 400: variedad por encargue",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/ventas",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"detalles\": [\n    {\n      \"variedadId\": 20,\n      \"modo\": \"unidad\",\n      \"cantidad\": 1\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Error 400: modo inválido",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/ventas",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"detalles\": [\n    {\n      \"variedadId\": 6,\n      \"modo\": \"caja\",\n      \"cantidad\": 1\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Error 404: variedad inexistente",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/ventas",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"detalles\": [\n    {\n      \"variedadId\": 999,\n      \"modo\": \"unidad\",\n      \"cantidad\": 1\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Error 400: fecha mal formada",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/ventas?desde=2026-10-24"
+          }
+        },
+        {
+          "name": "Anular venta (devuelve stock)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/ventas/1"
+          }
+        },
+        {
+          "name": "Error 409: borrar variedad con ventas",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/variedades/6"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Encargues",
+      "item": [
+        {
+          "name": "Crear",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/encargues",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente\": \"Luis\",\n  \"telefono\": \"2494222222\",\n  \"detalles\": [\n    {\n      \"variedadId\": 20,\n      \"modo\": \"docena\",\n      \"cantidad\": 1\n    },\n    {\n      \"variedadId\": 6,\n      \"modo\": \"unidad\",\n      \"cantidad\": 6\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Listar",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/encargues"
+          }
+        },
+        {
+          "name": "Filtrar por estado",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/encargues?estado=pendiente"
+          }
+        },
+        {
+          "name": "Por hacer (agrupado por variedad)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/encargues/por-hacer"
+          }
+        },
+        {
+          "name": "Ver uno",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/encargues/1"
+          }
+        },
+        {
+          "name": "Editar contacto",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/encargues/1",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"telefono\": \"2494333333\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Pasar a listo",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/encargues/1/estado",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"listo\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Volver a pendiente",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/encargues/1/estado",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"pendiente\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Entregar (genera la venta)",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/encargues/1/estado",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"entregado\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Error 409: saltear un estado",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/encargues/1/estado",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"entregado\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Error 400: estado inválido",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/encargues/1/estado",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"cocinando\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Error 409: borrar entregado",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/encargues/1"
+          }
+        },
+        {
+          "name": "Cancelar (borrar)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/encargues/2"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Catalogo (público)",
+      "item": [
+        {
+          "name": "Ver catálogo (sin stock exacto)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/catalogo"
+          }
+        }
+      ]
+    }
+  ]
+}
