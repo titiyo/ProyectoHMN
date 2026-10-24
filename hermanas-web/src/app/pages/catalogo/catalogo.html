@@ -1,0 +1,79 @@
+<header class="cabecera text-center">
+  <!-- Hoja verde tenue detrás del logo -->
+  <svg class="hoja" viewBox="0 0 200 120" aria-hidden="true">
+    <path d="M20 100 C 40 20, 150 0, 185 15 C 175 70, 110 115, 20 100 Z" />
+    <path class="nervio" d="M25 98 C 70 70, 120 40, 182 17" />
+  </svg>
+  <div class="logo">
+    <span class="cursiva">Hermanas</span>
+    <span class="mayus">EMPRENDEDORAS</span>
+  </div>
+  <p class="bajada">Milanesas caseras</p>
+</header>
+
+<main class="container pb-5">
+  @if (cargando()) {
+    <p class="text-center text-muted py-5">Cargando el catálogo…</p>
+  } @else if (error()) {
+    <div class="text-center py-5">
+      <p class="text-muted">{{ error() }}</p>
+      <button class="btn btn-outline-primary" (click)="cargar()">Reintentar</button>
+    </div>
+  } @else {
+    @for (c of categorias(); track c.nombre) {
+      <section class="mb-5">
+        <div class="text-center mb-3">
+          <h2 class="titulo-cat">{{ c.nombre }}</h2>
+          @if (nota(c); as n) { <p class="nota">{{ n }}</p> }
+        </div>
+
+        <div class="row g-3">
+          @for (v of c.variedades; track v.nombre) {
+            <div class="col-6 col-md-4 col-lg-3">
+              <article class="tarjeta" [class.agotado]="v.estado === 'agotado'">
+                <h3 class="nombre">{{ v.nombre }}</h3>
+                <div class="precios num">
+                  @if (v.precioUnidad === null && v.precioDocena === null) {
+                    <span>Consultar precio</span>
+                  } @else {
+                    @if (v.precioUnidad !== null) {
+                      <span>{{ v.precioUnidad | currency:'ARS':'symbol-narrow':'1.0-0' }} <small>c/u</small></span>
+                    }
+                    @if (v.precioDocena !== null) {
+                      <span>{{ v.precioDocena | currency:'ARS':'symbol-narrow':'1.0-0' }} <small>docena</small></span>
+                    }
+                  }
+                </div>
+                <span class="estado estado-{{ v.estado }}">
+                  {{ v.estado === 'encargue' ? 'Por encargue' : v.estado === 'agotado' ? 'Agotado' : 'Disponible' }}
+                </span>
+              </article>
+            </div>
+          }
+        </div>
+      </section>
+    } @empty {
+      <p class="text-center text-muted py-5">Pronto vas a ver nuestras variedades acá.</p>
+    }
+  }
+</main>
+
+<footer class="pie">
+  <div class="container">
+    <div class="row g-3 text-center text-md-start">
+      <div class="col-md-4">
+        <h3 class="h6">Pedidos y consultas</h3>
+        <a [href]="'tel:' + contacto.telefono">{{ contacto.telefono }}</a><br />
+        <a [href]="'https://instagram.com/' + contacto.instagram" target="_blank" rel="noopener">@{{ contacto.instagram }}</a>
+      </div>
+      <div class="col-md-4">
+        <h3 class="h6">Horarios</h3>
+        @for (h of contacto.horarios; track h) { <div>{{ h }}</div> }
+      </div>
+      <div class="col-md-4">
+        <h3 class="h6">Dirección</h3>
+        {{ contacto.direccion }}
+      </div>
+    </div>
+  </div>
+</footer>
