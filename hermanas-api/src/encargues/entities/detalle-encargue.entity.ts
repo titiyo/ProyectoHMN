@@ -7,7 +7,7 @@ import {
 } from 'typeorm';
 import { Encargue } from './encargue.entity';
 import { Variedad } from '../../variedades/entities/variedad.entity';
-import type { Modo } from '../../ventas/entities/detalle-venta.entity';
+import { Presentacion } from '../../presentaciones/entities/presentacion.entity';
 
 // Renglón del encargue. NO guarda precio: el precio se fija al entregar.
 @Entity()
@@ -31,11 +31,26 @@ export class DetalleEncargue {
   @JoinColumn({ name: 'variedad_id' })
   variedad!: Variedad;
 
-  // Para cobrar precio de docena al entregar si se pidió por docena.
-  @Column({ type: 'varchar', length: 10 })
-  modo!: Modo;
+  // Para cobrar al entregar con el precio de esta presentación. null si se borró
+  // (solo puede pasar en encargues ya entregados: el borrado lo impide si no).
+  @Column({ name: 'presentacion_id', type: 'int', nullable: true })
+  presentacionId!: number | null;
 
-  // Siempre en UNIDADES (1 docena = 12), igual que en DetalleVenta.
+  @ManyToOne(() => Presentacion, { onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'presentacion_id' })
+  presentacion!: Presentacion | null;
+
+  // Copia del tamaño de la presentación al encargar. Si después la tarta pasa de 4 a 6
+  // porciones, este encargue se sigue cobrando por las tartas que se pidieron.
+  @Column({ type: 'int', default: 1 })
+  unidadesPorPresentacion!: number;
+
+  // Total pedido, en UNIDADES DE STOCK (1 docena = 12).
   @Column({ type: 'int' })
   cantidad!: number;
+
+  // Cuántas de esas ya están hechas: las que se reservaron del stock al crear el encargue.
+  // "Por hacer" muestra cantidad - cantidadPreparada. Si se cancela, vuelven al stock.
+  @Column({ type: 'int', default: 0 })
+  cantidadPreparada!: number;
 }

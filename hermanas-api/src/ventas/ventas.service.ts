@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -7,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import {
   Between,
   DataSource,
+  EntityManager,
   FindOptionsWhere,
   LessThan,
   MoreThanOrEqual,
@@ -14,14 +16,24 @@ import {
 } from 'typeorm';
 import { Venta } from './entities/venta.entity';
 import { Variedad } from '../variedades/entities/variedad.entity';
+import { Presentacion } from '../presentaciones/entities/presentacion.entity';
 import { Encargue } from '../encargues/entities/encargue.entity';
 import { DetalleEncargue } from '../encargues/entities/detalle-encargue.entity';
 import { CreateVentaDto } from './dto/create-venta.dto';
-import { precioObligatorio, UNIDADES_POR_MODO } from '../common/precios';
+import { RenglonPedido } from '../common/detalles';
+import { esPorEncargue, precioObligatorio } from '../common/precios';
 import { MAX_INT } from '../common/validaciones';
 import { guardarVenta, RenglonVenta } from './guardar-venta';
 
 const RELACIONES_VENTA = { detalles: { variedad: true } };
+
+// Un renglón del pedido ya resuelto contra la base.
+interface Linea {
+  variedad: Variedad;
+  presentacion: Presentacion;
+  cantidad: number; // en presentaciones (2 docenas = 2)
+  pedidas: number; // en unidades de stock (2 docenas = 24)
+}
 
 @Injectable()
 export class VentasService {
@@ -32,94 +44,129 @@ export class VentasService {
     private readonly dataSource: DataSource,
   ) {}
 
-  // Registrar una venta: TODO O NADA.
-  // Dentro de transaction() todo usa el mismo "manager". Si algo tira una excepción,
-  // Postgres hace ROLLBACK y no queda nada guardado. Si termina bien, hace COMMIT.
+  // Busca variedad y presentación de cada renglón y verifica que vayan juntas.
+  private async resolverLineas(manager: EntityManager, detalles: RenglonPedido[]) {
+    const lineas: Linea[] = [];
+    for (const item of detalles) {
+      const variedad = await manager.findOne(Variedad, {
+        where: { id: item.variedadId },
+        relations: { categoria: true, precios: true },
+      });
+      if (!variedad) {
+        throw new NotFoundException(`La variedad con ID ${item.variedadId} no existe.`);
+      }
+      const presentacion = await manager.findOneBy(Presentacion, { id: item.presentacionId });
+      if (!presentacion || presentacion.categoriaId !== variedad.categoriaId) {
+        throw new BadRequestException(
+          `La presentación ${item.presentacionId} no corresponde a "${variedad.nombre}".`,
+        );
+      }
+      lineas.push({
+        variedad,
+        presentacion,
+        cantidad: item.cantidad,
+        pedidas: item.cantidad * presentacion.unidades,
+      });
+    }
+    return lineas;
+  }
+
+  // Bloquea las filas de stock (SELECT ... FOR UPDATE) y devuelve cuánto hay de cada una.
+  // Otra venta que quiera las mismas variedades espera a que esta transacción termine.
+  // Se bloquean en orden de id: si dos ventas bloquearan en distinto orden, cada una
+  // podría quedarse esperando a la otra para siempre ("deadlock").
+  private async bloquearStock(manager: EntityManager, lineas: Linea[]) {
+    const ids = [...new Set(lineas.map((l) => l.variedad.id))].sort((a, b) => a - b);
+    const stock = new Map<number, number>();
+    for (const id of ids) {
+      const fila = await manager.findOneOrFail(Variedad, {
+        where: { id },
+        lock: { mode: 'pessimistic_write' },
+      });
+      stock.set(id, fila.stock);
+    }
+    return stock;
+  }
+
+  // Registrar una venta: TODO O NADA (transaction = si algo falla, ROLLBACK).
   //
-  // Con encargarFaltante = true, lo que no alcanza va a un encargue para ese cliente,
-  // en la MISMA transacción: o se guardan venta y encargue, o ninguno.
+  // - Si todo alcanza: venta normal, se descuenta el stock y se cobra ahora.
+  // - Si algo no alcanza (o es por encargue): TODO el pedido pasa a un encargue
+  //   (un solo ticket, se cobra al entregar). Sin "faltante" elegido → 409.
+  //     faltante 'reservar': lo que hay en stock se descuenta y queda como preparado.
+  //     faltante 'hacer':    no se toca el stock; se prepara todo.
   async create(dto: CreateVentaDto) {
     const ids = await this.dataSource.transaction(async (manager) => {
-      const aVender: RenglonVenta[] = [];
-      const aEncargar: Partial<DetalleEncargue>[] = [];
+      const lineas = await this.resolverLineas(manager, dto.detalles);
+      const stock = await this.bloquearStock(manager, lineas);
 
-      for (const item of dto.detalles) {
-        const variedad = await manager.findOne(Variedad, {
-          where: { id: item.variedadId },
-          relations: { categoria: true },
-        });
-        if (!variedad) {
-          throw new NotFoundException(
-            `La variedad con ID ${item.variedadId} no existe.`,
-          );
+      // ¿Alcanza todo? Se va restando por si la misma variedad viene en dos renglones.
+      const restante = new Map(stock);
+      const problemas: string[] = [];
+      for (const l of lineas) {
+        const hay = restante.get(l.variedad.id)!;
+        if (esPorEncargue(l.variedad)) {
+          problemas.push(`"${l.variedad.nombre}" se elabora por encargue`);
+        } else if (hay < l.pedidas) {
+          problemas.push(`"${l.variedad.nombre}": hay ${hay}, se piden ${l.pedidas}`);
+        } else {
+          restante.set(l.variedad.id, hay - l.pedidas);
         }
-        const porUnidad = UNIDADES_POR_MODO[item.modo];
-        const pedidas = item.cantidad * porUnidad;
+      }
 
-        // Variedades por encargue (Garbanzo): nada sale de stock.
-        if (variedad.categoria.porEncargue) {
-          if (!dto.encargarFaltante) {
-            throw new BadRequestException(
-              `"${variedad.nombre}" se elabora por encargue, no se vende de stock.`,
-            );
-          }
-          aEncargar.push({ variedadId: variedad.id, modo: item.modo, cantidad: pedidas });
-          continue;
-        }
-
-        // Bloqueo la fila (SELECT ... FOR UPDATE): otra venta que quiera esta variedad
-        // espera hasta que esta transacción termine. Así el stock que leo es el real
-        // y nadie lo cambia entre que lo leo y lo descuento. También ve lo que ya
-        // descontó un renglón anterior de esta misma venta.
-        const { stock } = await manager.findOneOrFail(Variedad, {
-          where: { id: variedad.id },
-          lock: { mode: 'pessimistic_write' },
-        });
-
-        // Por docena solo se venden docenas completas; no se arma una docena
-        // mitad de stock y mitad de encargue.
-        const vender = Math.min(pedidas, Math.floor(stock / porUnidad) * porUnidad);
-        const faltan = pedidas - vender;
-
-        if (faltan > 0 && !dto.encargarFaltante) {
-          throw new BadRequestException(
-            `Stock insuficiente de "${variedad.nombre}": hay ${stock}, se piden ${pedidas}.`,
-          );
-        }
-        if (vender > 0) {
-          const precio = precioObligatorio(variedad, item.modo);
-          await manager.decrement(Variedad, { id: variedad.id }, 'stock', vender);
-          aVender.push({
-            variedadId: variedad.id,
-            modo: item.modo,
-            cantidad: vender,
+      // Caso normal: venta en el momento.
+      if (problemas.length === 0) {
+        const renglones: RenglonVenta[] = [];
+        for (const l of lineas) {
+          const precio = precioObligatorio(l.variedad, l.presentacion);
+          await manager.decrement(Variedad, { id: l.variedad.id }, 'stock', l.pedidas);
+          renglones.push({
+            variedadId: l.variedad.id,
+            presentacionId: l.presentacion.id,
+            presentacionNombre: l.presentacion.nombre,
+            unidadesPorPresentacion: l.presentacion.unidades,
+            cantidad: l.pedidas,
             precioUnitario: precio,
-            subtotal: precio * (vender / porUnidad),
+            subtotal: precio * l.cantidad,
           });
         }
-        if (faltan > 0) {
-          aEncargar.push({ variedadId: variedad.id, modo: item.modo, cantidad: faltan });
-        }
+        const ventaId = await guardarVenta(manager, renglones, dto.cliente ?? null);
+        return { ventaId, encargueId: null };
       }
 
-      const ventaId =
-        aVender.length > 0
-          ? await guardarVenta(manager, aVender, dto.cliente ?? null)
-          : null;
-
-      let encargueId: number | null = null;
-      if (aEncargar.length > 0) {
-        const encargue = await manager.save(Encargue, {
-          cliente: dto.cliente!, // el controller ya exige cliente y telefono
-          telefono: dto.telefono!,
-        });
-        await manager.save(
-          DetalleEncargue,
-          aEncargar.map((d) => ({ ...d, encargueId: encargue.id })),
+      // Algo no alcanza y no se eligió qué hacer: 409 y no se guarda nada.
+      // El front muestra las dos opciones y vuelve a mandar el pedido con "faltante".
+      if (!dto.faltante) {
+        throw new ConflictException(
+          `No alcanza el stock (${problemas.join('; ')}). Elegí reservar lo que hay o mandar a hacer todo.`,
         );
-        encargueId = encargue.id;
       }
-      return { ventaId, encargueId };
+
+      // Todo el pedido pasa a encargue.
+      const encargue = await manager.save(Encargue, {
+        cliente: dto.cliente!, // el controller exige cliente y telefono con "faltante"
+        telefono: dto.telefono!,
+      });
+      const disponible = new Map(stock);
+      for (const l of lineas) {
+        let preparada = 0;
+        if (dto.faltante === 'reservar' && !esPorEncargue(l.variedad)) {
+          preparada = Math.min(l.pedidas, disponible.get(l.variedad.id)!);
+          disponible.set(l.variedad.id, disponible.get(l.variedad.id)! - preparada);
+          if (preparada > 0) {
+            await manager.decrement(Variedad, { id: l.variedad.id }, 'stock', preparada);
+          }
+        }
+        await manager.save(DetalleEncargue, {
+          encargueId: encargue.id,
+          variedadId: l.variedad.id,
+          presentacionId: l.presentacion.id,
+          unidadesPorPresentacion: l.presentacion.unidades,
+          cantidad: l.pedidas,
+          cantidadPreparada: preparada,
+        });
+      }
+      return { ventaId: null, encargueId: encargue.id };
     });
 
     // Respuesta siempre con la misma forma; el que no se creó viene en null.
@@ -128,7 +175,7 @@ export class VentasService {
       encargue: ids.encargueId
         ? await this.dataSource.getRepository(Encargue).findOne({
             where: { id: ids.encargueId },
-            relations: { detalles: { variedad: true } },
+            relations: { detalles: { variedad: true, presentacion: true } },
           })
         : null,
     };
@@ -165,7 +212,7 @@ export class VentasService {
 
   // Anular, también todo o nada.
   // - Venta de mostrador: devuelve las unidades al stock.
-  // - Venta de un encargue: no toca stock (nunca lo descontó); el encargue vuelve a "listo".
+  // - Venta de un encargue: no toca stock; el encargue vuelve a "listo".
   async remove(id: number) {
     const venta = await this.findOne(id);
     await this.dataSource.transaction(async (manager) => {

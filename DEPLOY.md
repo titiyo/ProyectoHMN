@@ -10,13 +10,38 @@ antes de pasar al siguiente. Todo en planes gratis.
 
 | Parte    | Servicio | URL / dato | Estado |
 |----------|----------|------------|--------|
-| Base     | Neon (Postgres 16, AWS US East 1, con pooling) | — | ✅ Seed cargado: 2 categorías, 22 variedades, sin precios ni stock |
+| Base     | Neon (Postgres 16, AWS US East 1, con pooling) | — | ⚠️ Hay que vaciarla para la Etapa 8 (ver abajo) |
 | API      | Render (Blueprint `render.yaml`) | https://hermanas-api.onrender.com | ✅ `DATABASE_URL` y `ADMIN_PASSWORD_HASH` cargados, `JWT_SECRET` generado |
 | Front    | Netlify (proyecto `hermanasemprendedoras`) | https://hermanasemprendedoras.netlify.app | ✅ Catálogo, login y panel probados |
 | CORS     | Render → `FRONT_URL` | `https://hermanasemprendedoras.netlify.app` | ⏳ Falta cargarlo (mientras tanto la API acepta cualquier origen) |
 | Dominio  | DigitalPlat + Cloudflare | `hermanas.dpdns.org` (o el que esté libre) | ⏳ Pendiente (paso 6) |
 
 Los pasos 0 a 5 de abajo ya están hechos; quedan como referencia.
+
+---
+
+## Etapa 8: vaciar Neon para el modelo nuevo (presentaciones + menú nuevo)
+
+El modelo cambió (precios por presentación, preparadas en encargues, menú nuevo) y
+todavía no hay ventas reales, así que se vacía la base y la API la vuelve a crear sola.
+**Se pierden los precios y el stock cargados en producción.**
+
+Orden (así nunca corre código nuevo contra tablas viejas):
+
+1. Neon → proyecto → **SQL Editor** → correr:
+   ```sql
+   DROP SCHEMA public CASCADE;
+   CREATE SCHEMA public;
+   ```
+   (Borra todas las tablas. Mientras tanto la API vieja da error: es solo un rato.)
+2. Recién ahí, push a `main`. Render redeploya; al arrancar, `synchronize` crea las
+   tablas nuevas y el seed carga las 5 categorías del menú con sus presentaciones.
+3. Probar `https://hermanas-api.onrender.com/catalogo` → tienen que aparecer
+   "Milanesas de soja rellenas", "Tartas integrales", etc.
+4. Panel → **Configuración**: cargar los precios de cada presentación y el stock.
+
+Si el push llegó antes de vaciar la base: vaciarla igual (paso 1) y en Render →
+**Manual Deploy → Restart service**, para que vuelva a crear las tablas y el seed.
 
 ---
 

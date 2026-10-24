@@ -1,14 +1,8 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { CatalogoService, CategoriaCatalogo } from '../../services/catalogo.service';
+import { CatalogoService, CategoriaCatalogo, ItemCatalogo } from '../../services/catalogo.service';
 import { mensajeDeError } from '../../services/avisos.service';
-
-// Aclaraciones fijas por categoría, como en las placas de Instagram.
-// Si algún día se quieren editar desde el panel, conviene pasarlas a un campo de Categoria.
-const NOTAS: Record<string, string> = {
-  soja: 'Todas contienen queso',
-};
 
 // Catálogo público: tarjetas por variedad, agrupadas por categoría. Sin cantidades.
 @Component({
@@ -50,8 +44,8 @@ export class Catalogo implements OnInit {
     });
   }
 
-  nota(c: CategoriaCatalogo): string | null {
-    if (c.porEncargue) return 'Elaboramos por encargue';
-    return NOTAS[c.nombre.toLowerCase()] ?? null;
+  // Si no hay ningún precio cargado, la tarjeta dice "Consultar precio".
+  sinPrecios(v: ItemCatalogo) {
+    return v.precios.every((p) => p.precio === null);
   }
 }

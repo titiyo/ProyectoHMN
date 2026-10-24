@@ -10,7 +10,7 @@ import { AvisosService, avisarSiNo401 } from './avisos.service';
 export interface NuevaVenta {
   cliente?: string;
   telefono?: string;
-  encargarFaltante?: boolean;
+  faltante?: 'reservar' | 'hacer';
   detalles: RenglonPedido[];
 }
 

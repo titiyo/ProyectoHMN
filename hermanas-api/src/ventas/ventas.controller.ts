@@ -12,7 +12,6 @@ import {
 import { VentasService } from './ventas.service';
 import { CreateVentaDto } from './dto/create-venta.dto';
 import {
-  validarBooleano,
   validarCampos,
   validarTexto,
 } from '../common/validaciones';
@@ -42,22 +41,20 @@ export class VentasController {
 
   @Post()
   create(@Body() dto: CreateVentaDto) {
-    validarCampos(dto, ['cliente', 'detalles', 'encargarFaltante', 'telefono']);
+    validarCampos(dto, ['cliente', 'detalles', 'faltante', 'telefono']);
     const limpio: CreateVentaDto = { detalles: validarDetalles(dto.detalles) };
 
-    if (dto.encargarFaltante !== undefined) {
-      limpio.encargarFaltante = validarBooleano(
-        dto.encargarFaltante,
-        'encargarFaltante',
-      );
-    }
-    if (limpio.encargarFaltante) {
-      // Si puede terminar en encargue, hay que saber a quién avisarle.
+    if (dto.faltante !== undefined) {
+      if (dto.faltante !== 'reservar' && dto.faltante !== 'hacer') {
+        throw new BadRequestException('faltante debe ser "reservar" o "hacer"');
+      }
+      limpio.faltante = dto.faltante;
+      // Puede terminar en encargue: hay que saber a quién avisarle.
       limpio.cliente = validarTexto(dto.cliente, 'cliente');
       limpio.telefono = validarTexto(dto.telefono, 'telefono');
     } else {
       if (dto.telefono !== undefined) {
-        throw new BadRequestException('telefono solo se usa con encargarFaltante');
+        throw new BadRequestException('telefono solo se usa con faltante');
       }
       if (dto.cliente !== undefined && dto.cliente !== null) {
         limpio.cliente = validarTexto(dto.cliente, 'cliente');

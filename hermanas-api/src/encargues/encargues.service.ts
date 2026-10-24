@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -8,10 +9,11 @@ import { DataSource, In, Repository } from 'typeorm';
 import { Encargue, EstadoEncargue } from './entities/encargue.entity';
 import { DetalleEncargue } from './entities/detalle-encargue.entity';
 import { Variedad } from '../variedades/entities/variedad.entity';
+import { Presentacion } from '../presentaciones/entities/presentacion.entity';
 import { CreateEncargueDto, UpdateEncargueDto } from './dto/create-encargue.dto';
-import { precioObligatorio, UNIDADES_POR_MODO } from '../common/precios';
+import { precioObligatorio } from '../common/precios';
 import { MAX_INT } from '../common/validaciones';
-import { guardarVenta } from '../ventas/guardar-venta';
+import { guardarVenta, RenglonVenta } from '../ventas/guardar-venta';
 import { Venta } from '../ventas/entities/venta.entity';
 
 // A qué estados se puede pasar desde cada uno: un paso para adelante o uno para atrás.
@@ -22,7 +24,7 @@ const TRANSICIONES: Record<EstadoEncargue, EstadoEncargue[]> = {
   entregado: [],
 };
 
-const RELACIONES = { detalles: { variedad: true } };
+const RELACIONES = { detalles: { variedad: true, presentacion: true } };
 
 @Injectable()
 export class EncarguesService {
@@ -33,17 +35,37 @@ export class EncarguesService {
     private readonly detallesRepository: Repository<DetalleEncargue>,
     @InjectRepository(Variedad)
     private readonly variedadesRepository: Repository<Variedad>,
+    @InjectRepository(Presentacion)
+    private readonly presentacionesRepository: Repository<Presentacion>,
     private readonly dataSource: DataSource,
   ) {}
 
+  // Alta manual desde la pantalla Encargues: no toca el stock (todo por hacer).
   async create(dto: CreateEncargueDto) {
-    // Verifico todas las variedades antes de guardar nada.
-    const ids = [...new Set(dto.detalles.map((d) => d.variedadId))];
-    const existentes = await this.variedadesRepository.findBy({ id: In(ids) });
-    const faltante = ids.find((id) => !existentes.some((v) => v.id === id));
-    if (faltante !== undefined) {
-      throw new NotFoundException(`La variedad con ID ${faltante} no existe.`);
-    }
+    // Verifico variedades y presentaciones antes de guardar nada.
+    const variedades = await this.variedadesRepository.findBy({
+      id: In([...new Set(dto.detalles.map((d) => d.variedadId))]),
+    });
+    const presentaciones = await this.presentacionesRepository.findBy({
+      id: In([...new Set(dto.detalles.map((d) => d.presentacionId))]),
+    });
+    const renglones = dto.detalles.map((d) => {
+      const variedad = variedades.find((v) => v.id === d.variedadId);
+      if (!variedad) throw new NotFoundException(`La variedad con ID ${d.variedadId} no existe.`);
+      const presentacion = presentaciones.find((p) => p.id === d.presentacionId);
+      if (!presentacion || presentacion.categoriaId !== variedad.categoriaId) {
+        throw new BadRequestException(
+          `La presentación ${d.presentacionId} no corresponde a "${variedad.nombre}".`,
+        );
+      }
+      return {
+        variedadId: variedad.id,
+        presentacionId: presentacion.id,
+        unidadesPorPresentacion: presentacion.unidades,
+        cantidad: d.cantidad * presentacion.unidades, // a unidades de stock
+        cantidadPreparada: 0,
+      };
+    });
 
     // Cabecera + renglones juntos: si fallan los renglones, no queda un encargue vacío.
     const id = await this.dataSource.transaction(async (manager) => {
@@ -53,12 +75,7 @@ export class EncarguesService {
       });
       await manager.save(
         DetalleEncargue,
-        dto.detalles.map((d) => ({
-          encargueId: encargue.id,
-          variedadId: d.variedadId,
-          modo: d.modo,
-          cantidad: d.cantidad * UNIDADES_POR_MODO[d.modo], // a unidades
-        })),
+        renglones.map((r) => ({ ...r, encargueId: encargue.id })),
       );
       return encargue.id;
     });
@@ -96,6 +113,8 @@ export class EncarguesService {
     return this.findOne(id);
   }
 
+  // "listo" significa que está TODO preparado. No hace falta tocar cantidadPreparada:
+  // el estado ya lo dice, y si vuelve a "pendiente" quedan las reservadas al principio.
   async cambiarEstado(id: number, nuevo: EstadoEncargue) {
     const encargue = await this.findOne(id);
     if (!TRANSICIONES[encargue.estado].includes(nuevo)) {
@@ -110,7 +129,7 @@ export class EncarguesService {
     }
 
     // Entregar: marcar entregado + crear la venta con los precios DE HOY, todo junto.
-    // No se descuenta stock: lo encargado se hizo aparte para este cliente.
+    // No se toca el stock: lo reservado ya se descontó al crear el encargue.
     const ventaId = await this.dataSource.transaction(async (manager) => {
       // Update condicional: si dos pedidos intentan entregar a la vez, solo uno
       // encuentra el encargue todavía en "listo". El otro no genera una venta doble.
@@ -123,30 +142,42 @@ export class EncarguesService {
         throw new ConflictException('El encargue ya no está en "listo".');
       }
 
-      const renglones = [];
+      const renglones: RenglonVenta[] = [];
       for (const d of encargue.detalles) {
+        if (!d.presentacion) {
+          throw new ConflictException(
+            `La presentación de "${d.variedad.nombre}" ya no existe; no se puede calcular el precio.`,
+          );
+        }
         const variedad = await manager.findOneOrFail(Variedad, {
           where: { id: d.variedadId },
-          relations: { categoria: true },
+          relations: { categoria: true, precios: true },
         });
-        const precio = precioObligatorio(variedad, d.modo); // 400 si no tiene precio
+        const precio = precioObligatorio(variedad, d.presentacion); // 400 si no tiene precio
         renglones.push({
           variedadId: d.variedadId,
-          modo: d.modo,
+          presentacionId: d.presentacion.id,
+          presentacionNombre: d.presentacion.nombre,
+          unidadesPorPresentacion: d.unidadesPorPresentacion,
           cantidad: d.cantidad,
           precioUnitario: precio,
-          subtotal: precio * (d.cantidad / UNIDADES_POR_MODO[d.modo]),
+          // Con la copia de unidades: 8 porciones encargadas de a 4 = 2 tartas enteras.
+          subtotal: precio * Math.ceil(d.cantidad / d.unidadesPorPresentacion),
         });
       }
       return guardarVenta(manager, renglones, encargue.cliente, encargue.id);
     });
 
-    // Misma forma que en los otros estados: { encargue, venta }.
-    const venta = await buscarVenta(this.dataSource, ventaId);
+    const venta = await this.dataSource.getRepository(Venta).findOne({
+      where: { id: ventaId },
+      relations: { detalles: { variedad: true } },
+    });
     return { encargue: await this.findOne(id), venta };
   }
 
-  // Cancelar un encargue que todavía no se entregó.
+  // Cancelar un encargue que todavía no se entregó. Lo ya hecho vuelve al stock:
+  //   pendiente → las reservadas (cantidadPreparada)
+  //   listo     → todo (está todo preparado)
   async remove(id: number) {
     const encargue = await this.findOne(id);
     if (encargue.estado === 'entregado') {
@@ -154,33 +185,50 @@ export class EncarguesService {
         'Un encargue entregado no se puede eliminar; anulá la venta primero.',
       );
     }
-    await this.encarguesRepository.delete(id); // renglones por CASCADE
-    return { message: `El encargue con ID ${id} fue cancelado.` };
+    let devueltas = 0;
+    await this.dataSource.transaction(async (manager) => {
+      for (const d of encargue.detalles) {
+        const vuelven = encargue.estado === 'listo' ? d.cantidad : d.cantidadPreparada;
+        if (vuelven > 0) {
+          await manager.increment(Variedad, { id: d.variedadId }, 'stock', vuelven);
+          devueltas += vuelven;
+        }
+      }
+      await manager.delete(Encargue, id); // renglones por CASCADE
+    });
+    return {
+      message:
+        `El encargue con ID ${id} fue cancelado.` +
+        (devueltas > 0 ? ` Volvieron ${devueltas} unidades al stock.` : ''),
+    };
   }
 
-  // "Por hacer": no es una tabla, es una consulta sobre los renglones de encargues pendientes.
+  // "Por hacer": no es una tabla, es una consulta sobre los encargues pendientes.
+  // Solo cuenta lo que falta preparar: cantidad - cantidadPreparada.
   async porHacer() {
     // 1) Subtotal por variedad con GROUP BY + SUM. En SQL sería:
-    //    SELECT v.id, v.nombre, SUM(d.cantidad) FROM detalle_encargue d
-    //    JOIN encargue e ON ... JOIN variedad v ON ...
+    //    SELECT v.id, v.nombre, SUM(d.cantidad - d.cantidad_preparada)
+    //    FROM detalle_encargue d JOIN encargue e ... JOIN variedad v ...
     //    WHERE e.estado = 'pendiente' GROUP BY v.id, v.nombre
+    //    HAVING SUM(...) > 0      ← HAVING es el WHERE de después de agrupar
     const filas = await this.detallesRepository
       .createQueryBuilder('d')
       .innerJoin('d.encargue', 'e')
       .innerJoin('d.variedad', 'v')
       .select('v.id', 'variedadId')
       .addSelect('v.nombre', 'nombre')
-      .addSelect('SUM(d.cantidad)', 'subtotal')
+      .addSelect('SUM(d.cantidad - d.cantidadPreparada)', 'subtotal')
       .where('e.estado = :estado', { estado: 'pendiente' })
       .groupBy('v.id')
       .addGroupBy('v.nombre')
+      .having('SUM(d.cantidad - d.cantidadPreparada) > 0')
       .orderBy('v.nombre', 'ASC')
       .getRawMany<{ variedadId: number; nombre: string; subtotal: string }>();
 
-    // 2) El detalle de cada encargue (cliente y cantidad) para mostrar debajo de cada variedad.
+    // 2) El detalle de cada encargue para mostrar debajo de cada variedad.
     const detalles = await this.detallesRepository.find({
       where: { encargue: { estado: 'pendiente' } },
-      relations: { encargue: true },
+      relations: { encargue: true, presentacion: true },
       order: { encargue: { fecha: 'ASC' } },
     });
 
@@ -190,27 +238,21 @@ export class EncarguesService {
       // SUM devuelve bigint y el driver lo pasa como texto para no perder precisión.
       subtotal: Number(f.subtotal),
       encargues: detalles
-        .filter((d) => d.variedadId === f.variedadId)
+        .filter((d) => d.variedadId === f.variedadId && d.cantidad > d.cantidadPreparada)
         .map((d) => ({
           encargueId: d.encargueId,
           cliente: d.encargue.cliente,
           telefono: d.encargue.telefono,
           fecha: d.encargue.fecha,
-          modo: d.modo,
+          presentacion: d.presentacion?.nombre ?? '',
           cantidad: d.cantidad,
+          preparada: d.cantidadPreparada,
+          faltan: d.cantidad - d.cantidadPreparada,
         })),
     }));
     const total = variedades.reduce((suma, v) => suma + v.subtotal, 0);
     return { variedades, total };
   }
-}
-
-// Trae la venta recién creada con sus renglones.
-function buscarVenta(dataSource: DataSource, id: number) {
-  return dataSource.getRepository(Venta).findOne({
-    where: { id },
-    relations: { detalles: { variedad: true } },
-  });
 }
 
 // Para que el controller valide el estado recibido.

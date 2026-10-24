@@ -30,13 +30,16 @@ export class CategoriasService {
 
   async create(dto: CreateCategoriaDto) {
     await this.verificarNombreLibre(dto.nombre);
-    return this.categoriasRepository.save(dto);
+    const nueva = await this.categoriasRepository.save(dto);
+    return this.findOne(nueva.id);
   }
 
+  // Cada categoría viene con sus presentaciones ordenadas (unidad antes que docena).
   findAll(nombre?: string) {
     return this.categoriasRepository.find({
       where: nombre ? { nombre: ILike(`%${nombre}%`) } : {},
-      order: { id: 'ASC' },
+      relations: { presentaciones: true },
+      order: { id: 'ASC', presentaciones: { orden: 'ASC', unidades: 'ASC' } },
     });
   }
 
@@ -46,7 +49,8 @@ export class CategoriasService {
         ? null
         : await this.categoriasRepository.findOne({
             where: { id },
-            relations: { variedades: true },
+            relations: { variedades: true, presentaciones: true },
+            order: { presentaciones: { orden: 'ASC', unidades: 'ASC' } },
           });
     if (!categoria) {
       throw new NotFoundException(`La categoría con ID ${id} no existe.`);
@@ -55,14 +59,13 @@ export class CategoriasService {
   }
 
   async update(id: number, dto: UpdateCategoriaDto) {
-    const categoria = await this.findOne(id);
+    await this.findOne(id); // 404 si no existe
     if (dto.nombre !== undefined) {
       await this.verificarNombreLibre(dto.nombre, id);
     }
-    // Saco las variedades para que save() no intente tocarlas.
-    const { variedades, ...datos } = categoria;
-    void variedades;
-    return this.categoriasRepository.save({ ...datos, ...dto });
+    // update() solo toca las columnas propias (no las relaciones).
+    await this.categoriasRepository.update(id, dto);
+    return this.findOne(id);
   }
 
   async remove(id: number) {

@@ -1,5 +1,6 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Variedad } from '../../variedades/entities/variedad.entity';
+import { Presentacion } from '../../presentaciones/entities/presentacion.entity';
 
 @Entity()
 export class Categoria {
@@ -9,16 +10,18 @@ export class Categoria {
   @Column({ unique: true })
   nombre!: string;
 
-  // true = sus variedades no se venden de stock, van siempre a encargue (ej. Garbanzo).
+  // true = sus variedades no se venden de stock, van siempre a encargue.
+  // Cada variedad puede pisarlo con su propio porEncargue.
   @Column({ default: false })
   porEncargue!: boolean;
 
-  // Precios en pesos enteros. null = todavía sin cargar.
-  @Column({ type: 'int', nullable: true })
-  precioUnidad!: number | null;
+  // Aclaración que se muestra en el catálogo (ej. "Todas contienen queso"). null = ninguna.
+  @Column({ type: 'varchar', nullable: true })
+  nota!: string | null;
 
-  @Column({ type: 'int', nullable: true })
-  precioDocena!: number | null;
+  // Cómo se vende: unidad, docena, entera, porción... cada una con su precio.
+  @OneToMany(() => Presentacion, (p) => p.categoria)
+  presentaciones!: Presentacion[];
 
   @OneToMany(() => Variedad, (variedad) => variedad.categoria)
   variedades!: Variedad[];

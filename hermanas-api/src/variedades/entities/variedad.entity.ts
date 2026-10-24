@@ -3,9 +3,11 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Categoria } from '../../categorias/entities/categoria.entity';
+import { PrecioVariedad } from './precio-variedad.entity';
 
 @Entity()
 export class Variedad {
@@ -23,14 +25,15 @@ export class Variedad {
   @JoinColumn({ name: 'categoria_id' })
   categoria!: Categoria;
 
-  // null = usa el precio de la categoría.
-  @Column({ type: 'int', nullable: true })
-  precioUnidad!: number | null;
+  // Precios propios por presentación. Los que no estén usan el precio de la categoría.
+  @OneToMany(() => PrecioVariedad, (p) => p.variedad)
+  precios!: PrecioVariedad[];
 
-  @Column({ type: 'int', nullable: true })
-  precioDocena!: number | null;
+  // null = hereda de la categoría; true/false = la pisa.
+  @Column({ type: 'boolean', nullable: true })
+  porEncargue!: boolean | null;
 
-  // Siempre en unidades (una docena = 12).
+  // Siempre en la unidad más chica (milanesas sueltas, porciones).
   @Column({ type: 'int', default: 0 })
   stock!: number;
 

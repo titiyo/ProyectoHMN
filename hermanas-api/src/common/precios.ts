@@ -1,27 +1,32 @@
 import { BadRequestException } from '@nestjs/common';
 import { Variedad } from '../variedades/entities/variedad.entity';
-import { Modo } from '../ventas/entities/detalle-venta.entity';
+import { Presentacion } from '../presentaciones/entities/presentacion.entity';
 
-// Unidades que descuenta del stock cada modo.
-export const UNIDADES_POR_MODO: Record<Modo, number> = { unidad: 1, docena: 12 };
-
-// Precio efectivo = el de la variedad si tiene, si no el de su categoría.
-// "??" solo salta al segundo valor cuando el primero es null/undefined (un 0 se respeta).
-// La variedad tiene que venir con su categoría cargada.
-export function precioEfectivo(variedad: Variedad, modo: Modo): number | null {
-  if (modo === 'unidad') {
-    return variedad.precioUnidad ?? variedad.categoria.precioUnidad;
-  }
-  return variedad.precioDocena ?? variedad.categoria.precioDocena;
+// Precio efectivo = el propio de la variedad para esa presentación si tiene,
+// si no el de la presentación (de la categoría). null = sin precio.
+// La variedad tiene que venir con "precios" cargado.
+export function precioEfectivo(
+  variedad: Variedad,
+  presentacion: Presentacion,
+): number | null {
+  const propio = variedad.precios?.find((p) => p.presentacionId === presentacion.id);
+  return propio?.precio ?? presentacion.precio;
 }
 
-// Igual que precioEfectivo pero corta con 400 si no hay precio cargado.
-export function precioObligatorio(variedad: Variedad, modo: Modo): number {
-  const precio = precioEfectivo(variedad, modo);
+// Igual pero corta con 400 si no hay precio cargado.
+export function precioObligatorio(variedad: Variedad, presentacion: Presentacion): number {
+  const precio = precioEfectivo(variedad, presentacion);
   if (precio === null) {
     throw new BadRequestException(
-      `"${variedad.nombre}" no tiene precio por ${modo} cargado.`,
+      `"${variedad.nombre}" no tiene precio por ${presentacion.nombre} cargado.`,
     );
   }
   return precio;
+}
+
+// ¿Se vende por encargue? Lo de la variedad pisa lo de la categoría.
+// "??" solo usa la categoría cuando la variedad tiene null (un false propio se respeta).
+// La variedad tiene que venir con "categoria" cargada.
+export function esPorEncargue(variedad: Variedad): boolean {
+  return variedad.porEncargue ?? variedad.categoria.porEncargue;
 }

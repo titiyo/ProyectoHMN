@@ -34,6 +34,20 @@ export function validarTexto(valor: unknown, campo: string): string {
   return valor.trim();
 }
 
+// Texto que se puede borrar: null o "" (o solo espacios) = sin texto.
+export function validarTextoOpcional(valor: unknown, campo: string): string | null {
+  if (valor === null) return null;
+  if (typeof valor !== 'string' || valor.length > 200) {
+    throw new BadRequestException(`${campo} debe ser un texto de hasta 200 caracteres o null`);
+  }
+  return valor.trim() === '' ? null : valor.trim();
+}
+
+// Booleano que se puede "vaciar": null = hereda (ej. porEncargue de una variedad).
+export function validarBooleanoOpcional(valor: unknown, campo: string): boolean | null {
+  return valor === null ? null : validarBooleano(valor, campo);
+}
+
 export function validarBooleano(valor: unknown, campo: string): boolean {
   if (typeof valor !== 'boolean') {
     throw new BadRequestException(`${campo} debe ser true o false`);

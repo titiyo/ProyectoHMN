@@ -5,7 +5,13 @@ import { EncarguesService } from '../../services/encargues.service';
 import { StockService } from '../../services/stock.service';
 import { VentasService } from '../../services/ventas.service';
 import { AvisosService } from '../../services/avisos.service';
-import { Encargue, EstadoEncargue, enDocenas, Modo } from '../../models';
+import { Encargue, EstadoEncargue } from '../../models';
+
+interface RenglonAlta {
+  variedadId: number | null;
+  presentacionId: number | null;
+  cantidad: number | null;
+}
 
 // Siguiente y anterior de cada estado (igual que las transiciones del backend).
 const SIGUIENTE: Partial<Record<EstadoEncargue, EstadoEncargue>> = {
@@ -26,7 +32,8 @@ export class Encargues implements OnInit {
   private encarguesService = inject(EncarguesService);
   private ventas = inject(VentasService);
   private avisos = inject(AvisosService);
-  protected grupos = inject(StockService).porCategoria;
+  private stock = inject(StockService);
+  protected grupos = this.stock.porCategoria;
 
   protected filtros: { valor: EstadoEncargue | undefined; texto: string }[] = [
     { valor: 'pendiente', texto: 'Pendientes' },
@@ -38,7 +45,6 @@ export class Encargues implements OnInit {
   protected encargues = signal<Encargue[]>([]);
   protected siguiente = SIGUIENTE;
   protected anterior = ANTERIOR;
-  protected enDocenas = enDocenas;
 
   // Alta
   protected mostrarAlta = signal(false);
@@ -79,10 +85,12 @@ export class Encargues implements OnInit {
   }
 
   cancelar(e: Encargue) {
-    if (!confirm(`¿Cancelar el encargue #${e.id} de ${e.cliente}?`)) return;
+    const vuelven = e.estado === 'listo' ? 'todo lo preparado' : 'lo reservado';
+    if (!confirm(`¿Cancelar el encargue #${e.id} de ${e.cliente}? ${vuelven[0].toUpperCase() + vuelven.slice(1)} vuelve al stock.`)) return;
     this.encarguesService.cancelar(e.id).subscribe({
-      next: () => {
-        this.avisos.exito(`Encargue #${e.id} cancelado.`);
+      next: (r) => {
+        this.avisos.exito(r.message);
+        this.stock.cargar();
         this.cargar();
       },
       error: (err) => this.avisos.error(err),
@@ -96,7 +104,7 @@ export class Encargues implements OnInit {
     return (
       n.cliente.trim() !== '' &&
       n.telefono.trim() !== '' &&
-      n.detalles.every((d) => d.variedadId && d.cantidad && d.cantidad >= 1)
+      n.detalles.every((d) => d.variedadId && d.presentacionId && d.cantidad && d.cantidad >= 1)
     );
   }
 
@@ -107,7 +115,11 @@ export class Encargues implements OnInit {
       .crear({
         cliente: n.cliente.trim(),
         telefono: n.telefono.trim(),
-        detalles: n.detalles.map((d) => ({ variedadId: d.variedadId!, modo: d.modo, cantidad: d.cantidad! })),
+        detalles: n.detalles.map((d) => ({
+          variedadId: d.variedadId!,
+          presentacionId: d.presentacionId!,
+          cantidad: d.cantidad!,
+        })),
       })
       .subscribe({
         next: (e) => {
@@ -120,15 +132,27 @@ export class Encargues implements OnInit {
       });
   }
 
+  presentacionesDe(variedadId: number | null) {
+    const v = this.stock.variedades().find((x) => x.id === variedadId);
+    return this.stock.presentacionesDe(v?.categoriaId);
+  }
+
+  // Al cambiar de variedad elijo la primera presentación de su categoría.
+  cambiarVariedad(d: RenglonAlta, id: number | null) {
+    d.variedadId = id;
+    const opciones = this.presentacionesDe(id);
+    if (!opciones.some((p) => p.id === d.presentacionId)) d.presentacionId = opciones[0]?.id ?? null;
+  }
+
   agregarRenglon() {
-    this.nuevo.detalles.push({ variedadId: null, modo: 'unidad', cantidad: 1 });
+    this.nuevo.detalles.push({ variedadId: null, presentacionId: null, cantidad: 1 });
   }
 
   private encargueVacio() {
     return {
       cliente: '',
       telefono: '',
-      detalles: [{ variedadId: null as number | null, modo: 'unidad' as Modo, cantidad: 1 as number | null }],
+      detalles: [{ variedadId: null, presentacionId: null, cantidad: 1 }] as RenglonAlta[],
     };
   }
 }

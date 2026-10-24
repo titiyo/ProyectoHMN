@@ -15,11 +15,11 @@ import { UpdateCategoriaDto } from './dto/update-categoria.dto';
 import {
   validarBooleano,
   validarCampos,
-  validarPrecio,
   validarTexto,
+  validarTextoOpcional,
 } from '../common/validaciones';
 
-const CAMPOS = ['nombre', 'porEncargue', 'precioUnidad', 'precioDocena'];
+const CAMPOS = ['nombre', 'porEncargue', 'nota'];
 
 @Controller('categorias')
 export class CategoriasController {
@@ -35,11 +35,8 @@ export class CategoriasController {
     if (dto.porEncargue !== undefined) {
       limpio.porEncargue = validarBooleano(dto.porEncargue, 'porEncargue');
     }
-    if (dto.precioUnidad !== undefined) {
-      limpio.precioUnidad = validarPrecio(dto.precioUnidad, 'precioUnidad');
-    }
-    if (dto.precioDocena !== undefined) {
-      limpio.precioDocena = validarPrecio(dto.precioDocena, 'precioDocena');
+    if (dto.nota !== undefined) {
+      limpio.nota = validarTextoOpcional(dto.nota, 'nota');
     }
     return limpio;
   }

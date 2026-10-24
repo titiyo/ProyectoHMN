@@ -1,10 +1,10 @@
 import { Component, inject, input, signal } from '@angular/core';
 import { StockService } from '../../services/stock.service';
 import { AvisosService } from '../../services/avisos.service';
-import { enDocenas, Variedad } from '../../models';
+import { Categoria, enPresentaciones, esPorEncargue, Variedad } from '../../models';
 
 // Lista de variedades agrupadas por categoría con botones para ajustar el stock.
-// Se usa en el tablero (compacto) y en la página Stock (completo, con ±12).
+// Se usa en el tablero (compacto) y en la página Stock (completo, con ± la presentación grande).
 @Component({
   selector: 'app-stock-lista',
   templateUrl: './stock-lista.html',
@@ -18,10 +18,17 @@ export class StockLista {
   readonly compacto = input(false);
 
   protected grupos = this.stock.porCategoria;
-  protected enDocenas = enDocenas;
+  protected enPresentaciones = enPresentaciones;
+  protected esPorEncargue = esPorEncargue;
 
   // Ids con un pedido en curso, para deshabilitar sus botones y evitar doble clic.
   protected ocupados = signal<Set<number>>(new Set());
+
+  // La presentación más grande de la categoría (docena, entera, caja x4), para los botones ±N.
+  presentacionGrande(categoria: Categoria) {
+    const p = [...categoria.presentaciones].sort((a, b) => b.unidades - a.unidades)[0];
+    return p && p.unidades > 1 ? p : null;
+  }
 
   ajustar(v: Variedad, delta: number) {
     this.marcar(v.id, true);

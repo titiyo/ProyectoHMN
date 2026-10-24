@@ -43,7 +43,7 @@ export class EncarguesService {
 
   cancelar(id: number) {
     return this.http
-      .delete(`${this.url}/${id}`)
+      .delete<{ message: string }>(`${this.url}/${id}`)
       .pipe(tap(() => this.cargarPorHacer()));
   }
 }

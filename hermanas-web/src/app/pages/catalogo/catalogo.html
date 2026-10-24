@@ -24,7 +24,7 @@
       <section class="mb-5">
         <div class="text-center mb-3">
           <h2 class="titulo-cat">{{ c.nombre }}</h2>
-          @if (nota(c); as n) { <p class="nota">{{ n }}</p> }
+          @if (c.nota) { <p class="nota">{{ c.nota }}</p> }
         </div>
 
         <div class="row g-3">
@@ -33,14 +33,14 @@
               <article class="tarjeta" [class.agotado]="v.estado === 'agotado'">
                 <h3 class="nombre">{{ v.nombre }}</h3>
                 <div class="precios num">
-                  @if (v.precioUnidad === null && v.precioDocena === null) {
+                  @if (sinPrecios(v)) {
                     <span>Consultar precio</span>
                   } @else {
-                    @if (v.precioUnidad !== null) {
-                      <span>{{ v.precioUnidad | currency:'ARS':'symbol-narrow':'1.0-0' }} <small>c/u</small></span>
-                    }
-                    @if (v.precioDocena !== null) {
-                      <span>{{ v.precioDocena | currency:'ARS':'symbol-narrow':'1.0-0' }} <small>docena</small></span>
+                    <!-- Una línea por presentación con precio: "$ 900 unidad", "$ 9.800 docena" -->
+                    @for (p of v.precios; track p.presentacion) {
+                      @if (p.precio !== null) {
+                        <span>{{ p.precio | currency:'ARS':'symbol-narrow':'1.0-0' }} <small>{{ p.presentacion }}</small></span>
+                      }
                     }
                   }
                 </div>

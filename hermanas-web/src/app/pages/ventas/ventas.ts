@@ -3,7 +3,7 @@ import { CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { aFormatoApi, VentasService } from '../../services/ventas.service';
 import { AvisosService } from '../../services/avisos.service';
-import { enDocenas, Venta } from '../../models';
+import { Venta } from '../../models';
 
 // Historial de ventas con filtro por fecha.
 @Component({
@@ -23,7 +23,6 @@ export class Ventas implements OnInit {
   protected cargando = signal(false);
   protected abierta = signal<number | null>(null);
   protected totalPeriodo = computed(() => this.ventas().reduce((s, v) => s + v.total, 0));
-  protected enDocenas = enDocenas;
 
   ngOnInit() {
     this.buscar();

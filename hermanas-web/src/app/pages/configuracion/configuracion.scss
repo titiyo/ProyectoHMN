@@ -1,0 +1,14 @@
+// Anchos fijos para que los números no ocupen toda la fila.
+.precio { width: 7rem; }
+.corto { width: 5rem; }
+
+// Que el nombre y los selects no se achiquen hasta cortarse: la tabla se desplaza de costado.
+td:first-child input { min-width: 11rem; }
+td select { min-width: 9rem; }
+
+th {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #555;
+  white-space: nowrap;
+}

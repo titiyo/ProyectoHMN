@@ -20,7 +20,7 @@
     @for (d of nuevo.detalles; track $index; let i = $index) {
       <div class="row g-2 mb-2 align-items-end">
         <div class="col-12 col-md-6">
-          <select class="form-select" [name]="'v' + i" [(ngModel)]="d.variedadId" aria-label="Variedad">
+          <select class="form-select" [name]="'v' + i" [ngModel]="d.variedadId" (ngModelChange)="cambiarVariedad(d, $event)" aria-label="Variedad">
             <option [ngValue]="null" disabled>Variedad…</option>
             @for (g of grupos(); track g.categoria.id) {
               <optgroup [label]="g.categoria.nombre">
@@ -33,9 +33,10 @@
           <input class="form-control" type="number" min="1" [name]="'c' + i" [(ngModel)]="d.cantidad" aria-label="Cantidad" />
         </div>
         <div class="col col-md-3">
-          <select class="form-select" [name]="'m' + i" [(ngModel)]="d.modo" aria-label="Unidad o docena">
-            <option value="unidad">unidades</option>
-            <option value="docena">docenas</option>
+          <select class="form-select" [name]="'p' + i" [(ngModel)]="d.presentacionId" [disabled]="!d.variedadId" aria-label="Presentación">
+            @for (p of presentacionesDe(d.variedadId); track p.id) {
+              <option [ngValue]="p.id">{{ p.nombre }}{{ p.unidades > 1 ? ' (' + p.unidades + ')' : '' }}</option>
+            }
           </select>
         </div>
         @if (nuevo.detalles.length > 1) {
@@ -76,7 +77,12 @@
 
         <ul class="small my-2 ps-3">
           @for (d of e.detalles; track d.id) {
-            <li>{{ d.variedad.nombre }}: {{ d.modo === 'docena' ? enDocenas(d.cantidad) : d.cantidad + ' u' }}</li>
+            <li>
+              {{ d.variedad.nombre }}: {{ d.cantidad / d.unidadesPorPresentacion }} {{ d.presentacion?.nombre ?? 'u' }}
+              @if (d.cantidadPreparada > 0 && e.estado === 'pendiente') {
+                <span class="text-muted">({{ d.cantidadPreparada }} de {{ d.cantidad }} reservadas)</span>
+              }
+            </li>
           }
         </ul>
 

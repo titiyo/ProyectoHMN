@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Hermanas Emprendedoras API",
-    "description": "Etapas 1 a 6. Primero correr Auth > Login (completar la variable password): guarda el token y todos los demás requests lo usan. Cambiar baseUrl para probar contra Render.",
+    "description": "Etapas 1 a 8. Primero correr Auth > Login (completar la variable password). Los ids de ejemplo son los del seed en una base vacía. Cambiar baseUrl para probar contra Render.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -136,12 +136,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nombre\": \"Lenteja\",\n  \"porEncargue\": false,\n  \"precioUnidad\": 1000,\n  \"precioDocena\": 11000\n}"
+              "raw": "{\n  \"nombre\": \"Empanadas\",\n  \"porEncargue\": true,\n  \"nota\": \"Al horno\"\n}"
             }
           }
         },
         {
-          "name": "Cargar precios",
+          "name": "Editar aclaración y por encargue",
           "request": {
             "method": "PATCH",
             "url": "{{baseUrl}}/categorias/1",
@@ -153,7 +153,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"precioUnidad\": 900,\n  \"precioDocena\": 9800\n}"
+              "raw": "{\n  \"nota\": \"Todas contienen queso\",\n  \"porEncargue\": false\n}"
             }
           }
         },
@@ -193,6 +193,86 @@
           "request": {
             "method": "DELETE",
             "url": "{{baseUrl}}/categorias/3"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Presentaciones",
+      "item": [
+        {
+          "name": "Crear (media docena de soja)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/presentaciones",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoriaId\": 1,\n  \"nombre\": \"media docena\",\n  \"unidades\": 6,\n  \"precio\": 5200\n}"
+            }
+          }
+        },
+        {
+          "name": "Cambiar porciones de la tarta entera",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/presentaciones/9",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"unidades\": 6\n}"
+            }
+          }
+        },
+        {
+          "name": "Cargar precio",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/presentaciones/1",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"precio\": 900\n}"
+            }
+          }
+        },
+        {
+          "name": "Error 409: nombre repetido en la categoría",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/presentaciones",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"categoriaId\": 1,\n  \"nombre\": \"DOCENA\",\n  \"unidades\": 12\n}"
+            }
+          }
+        },
+        {
+          "name": "Eliminar",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/presentaciones/12"
           }
         }
       ]
@@ -253,7 +333,7 @@
           }
         },
         {
-          "name": "Editar (precio propio y ocultar)",
+          "name": "Editar (precio propio, por encargue y ocultar)",
           "request": {
             "method": "PATCH",
             "url": "{{baseUrl}}/variedades/1",
@@ -265,7 +345,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"precioUnidad\": 1100,\n  \"visible\": false\n}"
+              "raw": "{\n  \"precios\": [\n    {\n      \"presentacionId\": 1,\n      \"precio\": 1100\n    },\n    {\n      \"presentacionId\": 2,\n      \"precio\": null\n    }\n  ],\n  \"porEncargue\": true,\n  \"visible\": false\n}"
             }
           }
         },
@@ -396,7 +476,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"cliente\": \"Ana\",\n  \"detalles\": [\n    {\n      \"variedadId\": 6,\n      \"modo\": \"docena\",\n      \"cantidad\": 1\n    },\n    {\n      \"variedadId\": 8,\n      \"modo\": \"unidad\",\n      \"cantidad\": 3\n    }\n  ]\n}"
+              "raw": "{\n  \"cliente\": \"Ana\",\n  \"detalles\": [\n    {\n      \"variedadId\": 6,\n      \"cantidad\": 1,\n      \"presentacionId\": 2\n    },\n    {\n      \"variedadId\": 8,\n      \"cantidad\": 3,\n      \"presentacionId\": 1\n    }\n  ]\n}"
             }
           }
         },
@@ -413,12 +493,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"detalles\": [\n    {\n      \"variedadId\": 6,\n      \"modo\": \"unidad\",\n      \"cantidad\": 2\n    }\n  ]\n}"
+              "raw": "{\n  \"detalles\": [\n    {\n      \"variedadId\": 6,\n      \"cantidad\": 2,\n      \"presentacionId\": 1\n    }\n  ]\n}"
             }
           }
         },
         {
-          "name": "Venta con faltante → encargue",
+          "name": "Error 409: no alcanza y no se eligió qué hacer",
           "request": {
             "method": "POST",
             "url": "{{baseUrl}}/ventas",
@@ -430,7 +510,41 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"cliente\": \"Ana\",\n  \"telefono\": \"2494111111\",\n  \"encargarFaltante\": true,\n  \"detalles\": [\n    {\n      \"variedadId\": 6,\n      \"modo\": \"unidad\",\n      \"cantidad\": 6\n    },\n    {\n      \"variedadId\": 22,\n      \"modo\": \"docena\",\n      \"cantidad\": 1\n    }\n  ]\n}"
+              "raw": "{\n  \"detalles\": [\n    {\n      \"variedadId\": 13,\n      \"presentacionId\": 1,\n      \"cantidad\": 2\n    },\n    {\n      \"variedadId\": 7,\n      \"presentacionId\": 1,\n      \"cantidad\": 99\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "No alcanza → encargue reservando el stock",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/ventas",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente\": \"Ana\",\n  \"telefono\": \"2494111111\",\n  \"faltante\": \"reservar\",\n  \"detalles\": [\n    {\n      \"variedadId\": 13,\n      \"presentacionId\": 1,\n      \"cantidad\": 2\n    },\n    {\n      \"variedadId\": 7,\n      \"presentacionId\": 1,\n      \"cantidad\": 6\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "No alcanza → encargue sin tocar el stock",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/ventas",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente\": \"Luis\",\n  \"telefono\": \"2494222222\",\n  \"faltante\": \"hacer\",\n  \"detalles\": [\n    {\n      \"variedadId\": 28,\n      \"presentacionId\": 9,\n      \"cantidad\": 2\n    }\n  ]\n}"
             }
           }
         },
@@ -468,7 +582,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"detalles\": [\n    {\n      \"variedadId\": 6,\n      \"modo\": \"unidad\",\n      \"cantidad\": 1\n    },\n    {\n      \"variedadId\": 8,\n      \"modo\": \"unidad\",\n      \"cantidad\": 9999\n    }\n  ]\n}"
+              "raw": "{\n  \"detalles\": [\n    {\n      \"variedadId\": 6,\n      \"cantidad\": 1,\n      \"presentacionId\": 1\n    },\n    {\n      \"variedadId\": 8,\n      \"cantidad\": 9999,\n      \"presentacionId\": 1\n    }\n  ]\n}"
             }
           }
         },
@@ -485,7 +599,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"detalles\": [\n    {\n      \"variedadId\": 20,\n      \"modo\": \"unidad\",\n      \"cantidad\": 1\n    }\n  ]\n}"
+              "raw": "{\n  \"detalles\": [\n    {\n      \"variedadId\": 20,\n      \"cantidad\": 1,\n      \"presentacionId\": 1\n    }\n  ]\n}"
             }
           }
         },
@@ -502,7 +616,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"detalles\": [\n    {\n      \"variedadId\": 6,\n      \"modo\": \"caja\",\n      \"cantidad\": 1\n    }\n  ]\n}"
+              "raw": "{\n  \"detalles\": [\n    {\n      \"variedadId\": 6,\n      \"cantidad\": 1,\n      \"presentacionId\": 1\n    }\n  ]\n}"
             }
           }
         },
@@ -519,7 +633,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"detalles\": [\n    {\n      \"variedadId\": 999,\n      \"modo\": \"unidad\",\n      \"cantidad\": 1\n    }\n  ]\n}"
+              "raw": "{\n  \"detalles\": [\n    {\n      \"variedadId\": 999,\n      \"cantidad\": 1,\n      \"presentacionId\": 1\n    }\n  ]\n}"
             }
           }
         },
@@ -562,7 +676,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"cliente\": \"Luis\",\n  \"telefono\": \"2494222222\",\n  \"detalles\": [\n    {\n      \"variedadId\": 20,\n      \"modo\": \"docena\",\n      \"cantidad\": 1\n    },\n    {\n      \"variedadId\": 6,\n      \"modo\": \"unidad\",\n      \"cantidad\": 6\n    }\n  ]\n}"
+              "raw": "{\n  \"cliente\": \"Luis\",\n  \"telefono\": \"2494222222\",\n  \"detalles\": [\n    {\n      \"variedadId\": 20,\n      \"cantidad\": 1,\n      \"presentacionId\": 2\n    },\n    {\n      \"variedadId\": 6,\n      \"cantidad\": 6,\n      \"presentacionId\": 1\n    }\n  ]\n}"
             }
           }
         },

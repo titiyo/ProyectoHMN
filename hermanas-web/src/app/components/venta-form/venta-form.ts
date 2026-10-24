@@ -4,27 +4,32 @@ import { FormsModule } from '@angular/forms';
 import { StockService } from '../../services/stock.service';
 import { VentasService } from '../../services/ventas.service';
 import { AvisosService } from '../../services/avisos.service';
-import { Modo, precioEfectivo, UNIDADES_POR_MODO, Variedad } from '../../models';
+import { esPorEncargue, precioEfectivo, Presentacion, Variedad } from '../../models';
 
 interface Renglon {
   variedadId: number | null;
-  modo: Modo;
+  presentacionId: number | null;
   cantidad: number | null;
 }
 
-// Cómo queda un renglón con el stock actual: cuánto se vende ya y cuánto falta.
+// Cómo queda un renglón con el stock actual.
 interface Analisis {
   variedad: Variedad;
-  porUnidad: number;
-  pedidas: number;   // unidades
-  vendibles: number; // unidades que salen del stock
-  faltan: number;    // unidades que irían a encargue
+  presentacion: Presentacion;
+  pedidas: number; // en unidades de stock
+  porEncargue: boolean;
+  alcanza: boolean; // hay stock para venderlo ya
+  reservable: number; // cuántas se podrían reservar del stock si no alcanza
   precio: number | null;
-  subtotal: number;  // solo de lo que se vende ya
+  subtotal: number;
 }
 
-// Formulario de venta. En el tablero se usa compacto (un renglón, sin cliente salvo
-// que haga falta encargar); en "Nueva venta" completo, con varios renglones.
+type Opcion = 'reservar' | 'hacer';
+
+// Formulario de venta. En el tablero se usa compacto (un renglón); en "Nueva venta"
+// completo, con varios renglones.
+// Si algo no alcanza (o es por encargue), TODO el pedido pasa a encargue y hay que
+// elegir: reservar lo que hay en stock, o no tocarlo y mandar a hacer todo.
 @Component({
   selector: 'app-venta-form',
   imports: [FormsModule, CurrencyPipe],
@@ -42,55 +47,88 @@ export class VentaForm {
   protected renglones: Renglon[] = [this.renglonVacio()];
   protected cliente = '';
   protected telefono = '';
-  protected encargarFaltante = false;
+  protected opcion: Opcion | null = null;
   protected enviando = signal(false);
 
-  // Se recalcula en cada detección de cambios (al tipear o al cambiar el stock).
-  // Repite la misma regla que el backend: por docena solo se venden docenas completas.
-  analizar(r: Renglon): Analisis | null {
-    const variedad = this.stock.variedades().find((v) => v.id === r.variedadId);
-    if (!variedad || !r.cantidad || r.cantidad < 1) return null;
-    const porUnidad = UNIDADES_POR_MODO[r.modo];
-    const pedidas = r.cantidad * porUnidad;
-    const vendibles = variedad.categoria.porEncargue
-      ? 0
-      : Math.min(pedidas, Math.floor(variedad.stock / porUnidad) * porUnidad);
-    const precio = precioEfectivo(variedad, r.modo);
-    return {
-      variedad,
-      porUnidad,
-      pedidas,
-      vendibles,
-      faltan: pedidas - vendibles,
-      precio,
-      subtotal: (precio ?? 0) * (vendibles / porUnidad),
-    };
+  presentacionesDe(r: Renglon): Presentacion[] {
+    const v = this.stock.variedades().find((x) => x.id === r.variedadId);
+    return this.stock.presentacionesDe(v?.categoriaId);
   }
 
-  get analisis() {
-    return this.renglones.map((r) => this.analizar(r));
+  // Al cambiar de variedad, la presentación anterior puede no existir en la nueva
+  // categoría (ej. de milanesa a tarta): elijo la primera de la nueva.
+  cambiarVariedad(r: Renglon, id: number | null) {
+    r.variedadId = id;
+    const presentaciones = this.presentacionesDe(r);
+    if (!presentaciones.some((p) => p.id === r.presentacionId)) {
+      r.presentacionId = presentaciones[0]?.id ?? null;
+    }
+  }
+
+  // Se recalcula en cada detección de cambios. Repite la regla del backend:
+  // se va restando el stock por si la misma variedad está en dos renglones.
+  get analisis(): (Analisis | null)[] {
+    const restante = new Map<number, number>(); // para ver si alcanza
+    const disponible = new Map<number, number>(); // para calcular lo reservable
+    return this.renglones.map((r) => {
+      const variedad = this.stock.variedades().find((v) => v.id === r.variedadId);
+      const presentacion = this.presentacionesDe(r).find((p) => p.id === r.presentacionId);
+      if (!variedad || !presentacion || !r.cantidad || r.cantidad < 1) return null;
+
+      const pedidas = r.cantidad * presentacion.unidades;
+      const porEncargue = esPorEncargue(variedad);
+      const hay = restante.get(variedad.id) ?? variedad.stock;
+      const alcanza = !porEncargue && hay >= pedidas;
+      if (alcanza) restante.set(variedad.id, hay - pedidas);
+
+      const disp = disponible.get(variedad.id) ?? variedad.stock;
+      const reservable = porEncargue ? 0 : Math.min(pedidas, disp);
+      disponible.set(variedad.id, disp - reservable);
+
+      const precio = precioEfectivo(variedad, presentacion);
+      return {
+        variedad, presentacion, pedidas, porEncargue, alcanza, reservable, precio,
+        subtotal: (precio ?? 0) * r.cantidad,
+      };
+    });
   }
 
   get total() {
     return this.analisis.reduce((suma, a) => suma + (a?.subtotal ?? 0), 0);
   }
 
+  // ¿Algún renglón no se puede vender ya? Entonces todo va a encargue.
   get hayFaltante() {
-    return this.analisis.some((a) => a && a.faltan > 0);
+    return this.analisis.some((a) => a && !a.alcanza);
   }
 
-  // Lo que se va a vender sin precio cargado: la API lo rechazaría con 400.
+  // Números para el texto de las opciones, sumando todo el pedido.
+  get numeros() {
+    const lista = this.analisis.filter((a): a is Analisis => a !== null);
+    const pedidas = lista.reduce((s, a) => s + a.pedidas, 0);
+    const reservables = lista.reduce((s, a) => s + a.reservable, 0);
+    return { pedidas, reservables, faltan: pedidas - reservables };
+  }
+
+  // Solo bloquea si es venta inmediata: en un encargue el precio se fija al entregar.
   get sinPrecio() {
-    return this.analisis.filter((a) => a && a.vendibles > 0 && a.precio === null);
+    return this.analisis.filter((a) => a && a.precio === null);
   }
 
   get puedeEnviar() {
-    const completos = this.renglones.every((r) => r.variedadId && r.cantidad && r.cantidad >= 1);
-    if (!completos || this.enviando() || this.sinPrecio.length > 0) return false;
+    const completos = this.renglones.every(
+      (r) => r.variedadId && r.presentacionId && r.cantidad && r.cantidad >= 1,
+    );
+    if (!completos || this.enviando()) return false;
     if (this.hayFaltante) {
-      return this.encargarFaltante && this.cliente.trim() !== '' && this.telefono.trim() !== '';
+      return this.opcionElegida !== null && this.cliente.trim() !== '' && this.telefono.trim() !== '';
     }
-    return true;
+    return this.sinPrecio.length === 0;
+  }
+
+  // Si no hay nada para reservar, la única opción posible es mandar a hacer todo.
+  get opcionElegida(): Opcion | null {
+    return this.numeros.reservables === 0 ? 'hacer' : this.opcion;
   }
 
   agregarRenglon() {
@@ -104,26 +142,31 @@ export class VentaForm {
   registrar() {
     if (!this.puedeEnviar) return;
     this.enviando.set(true);
-    const conEncargue = this.hayFaltante;
+    const faltante = this.hayFaltante ? this.opcionElegida! : undefined;
 
     this.ventas
       .registrar({
         cliente: this.cliente.trim() || undefined,
-        // telefono y encargarFaltante solo van si hay algo para encargar.
-        telefono: conEncargue ? this.telefono.trim() : undefined,
-        encargarFaltante: conEncargue || undefined,
+        // telefono y faltante solo van si el pedido pasa a encargue.
+        telefono: faltante ? this.telefono.trim() : undefined,
+        faltante,
         detalles: this.renglones.map((r) => ({
           variedadId: r.variedadId!,
-          modo: r.modo,
+          presentacionId: r.presentacionId!,
           cantidad: r.cantidad!,
         })),
       })
       .subscribe({
         next: ({ venta, encargue }) => {
-          const partes = [];
-          if (venta) partes.push(`Venta registrada por $ ${venta.total.toLocaleString('es-AR')}`);
-          if (encargue) partes.push(`encargue #${encargue.id} creado para ${encargue.cliente}`);
-          this.avisos.exito(partes.join(' y ') + '.');
+          if (venta) {
+            this.avisos.exito(`Venta registrada por $ ${venta.total.toLocaleString('es-AR')}.`);
+          } else if (encargue) {
+            const reservadas = encargue.detalles.reduce((s, d) => s + d.cantidadPreparada, 0);
+            this.avisos.exito(
+              `Encargue #${encargue.id} creado para ${encargue.cliente}` +
+                (reservadas > 0 ? ` (${reservadas} reservadas del stock).` : '.'),
+            );
+          }
           this.limpiar();
         },
         error: (err) => {
@@ -137,11 +180,11 @@ export class VentaForm {
     this.renglones = [this.renglonVacio()];
     this.cliente = '';
     this.telefono = '';
-    this.encargarFaltante = false;
+    this.opcion = null;
     this.enviando.set(false);
   }
 
   private renglonVacio(): Renglon {
-    return { variedadId: null, modo: 'unidad', cantidad: 1 };
+    return { variedadId: null, presentacionId: null, cantidad: 1 };
   }
 }

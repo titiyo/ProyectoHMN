@@ -1,17 +1,17 @@
 <form (ngSubmit)="registrar()">
+  @let lista = analisis;
   @for (r of renglones; track $index; let i = $index) {
     <div class="renglon">
       <div class="row g-2 align-items-end">
         <div class="col-12" [class.col-md-6]="!compacto()">
           @if (!compacto() || i === 0) { <label class="form-label small mb-1" [for]="'var' + i">Variedad</label> }
-          <select class="form-select" [id]="'var' + i" [name]="'variedad' + i" [(ngModel)]="r.variedadId" required>
+          <select class="form-select" [id]="'var' + i" [name]="'variedad' + i"
+                  [ngModel]="r.variedadId" (ngModelChange)="cambiarVariedad(r, $event)" required>
             <option [ngValue]="null" disabled>Elegir…</option>
             @for (g of grupos(); track g.categoria.id) {
               <optgroup [label]="g.categoria.nombre">
                 @for (v of g.variedades; track v.id) {
-                  <option [ngValue]="v.id">
-                    {{ v.nombre }} {{ g.categoria.porEncargue ? '(encargue)' : '(' + v.stock + ')' }}
-                  </option>
+                  <option [ngValue]="v.id">{{ v.nombre }} ({{ v.stock }})</option>
                 }
               </optgroup>
             }
@@ -23,10 +23,12 @@
                  [name]="'cantidad' + i" [(ngModel)]="r.cantidad" required />
         </div>
         <div class="col" [class.col-md-3]="!compacto()">
-          <label class="form-label small mb-1" [for]="'modo' + i">En</label>
-          <select class="form-select" [id]="'modo' + i" [name]="'modo' + i" [(ngModel)]="r.modo">
-            <option value="unidad">unidades</option>
-            <option value="docena">docenas</option>
+          <label class="form-label small mb-1" [for]="'pres' + i">En</label>
+          <select class="form-select" [id]="'pres' + i" [name]="'presentacion' + i"
+                  [(ngModel)]="r.presentacionId" [disabled]="!r.variedadId">
+            @for (p of presentacionesDe(r); track p.id) {
+              <option [ngValue]="p.id">{{ p.nombre }}{{ p.unidades > 1 ? ' (' + p.unidades + ')' : '' }}</option>
+            }
           </select>
         </div>
         @if (renglones.length > 1) {
@@ -36,22 +38,19 @@
         }
       </div>
 
-      <!-- Resumen del renglón: subtotal o qué parte va a encargue -->
-      @if (analizar(r); as a) {
+      <!-- Resumen del renglón -->
+      @if (lista[i]; as a) {
         <div class="small mt-1">
-          @if (a.faltan === 0) {
-            <span class="text-muted">
-              @if (a.precio !== null) { {{ a.precio | currency:'ARS':'symbol-narrow':'1.0-0' }} c/u → <strong>{{ a.subtotal | currency:'ARS':'symbol-narrow':'1.0-0' }}</strong> }
-              @else { <span class="text-danger">Sin precio por {{ r.modo }} cargado (ver Configuración)</span> }
-            </span>
-          } @else if (a.vendibles === 0) {
-            <span class="text-warning-emphasis">
-              @if (a.variedad.categoria.porEncargue) { Se elabora por encargue: va todo a encargue. }
-              @else { No alcanza el stock (hay {{ a.variedad.stock }}): va todo a encargue. }
-            </span>
+          @if (a.porEncargue) {
+            <span class="text-warning-emphasis">Se elabora por encargue.</span>
+          } @else if (!a.alcanza) {
+            <span class="text-warning-emphasis">No alcanza: hay {{ a.variedad.stock }}, se piden {{ a.pedidas }}.</span>
+          } @else if (a.precio === null) {
+            <span class="text-danger">Sin precio por {{ a.presentacion.nombre }} cargado (ver Configuración).</span>
           } @else {
-            <span class="text-warning-emphasis">
-              Hay {{ a.variedad.stock }}: se venden {{ a.vendibles }} y se encargan {{ a.faltan }} unidades.
+            <span class="text-muted">
+              {{ a.precio | currency:'ARS':'symbol-narrow':'1.0-0' }} c/{{ a.presentacion.nombre }} →
+              <strong>{{ a.subtotal | currency:'ARS':'symbol-narrow':'1.0-0' }}</strong>
             </span>
           }
         </div>
@@ -63,16 +62,31 @@
     <button type="button" class="btn btn-link px-0" (click)="agregarRenglon()">+ Agregar otra variedad</button>
   }
 
+  <!-- Algo no alcanza: todo el pedido pasa a encargue. ¿Qué hacemos con el stock? -->
   @if (hayFaltante) {
+    @let n = numeros;
     <div class="alert alert-warning py-2 mt-2 mb-2">
-      <div class="form-check">
-        <input class="form-check-input" type="checkbox" id="encargar" name="encargar" [(ngModel)]="encargarFaltante" />
-        <label class="form-check-label" for="encargar">Vender lo que hay y <strong>encargar lo que falta</strong></label>
-      </div>
+      <p class="small mb-2">No alcanza el stock: el pedido pasa a <strong>encargue</strong> y se cobra al entregar.</p>
+      @if (n.reservables > 0) {
+        <div class="form-check">
+          <input class="form-check-input" type="radio" id="op-reservar" name="opcion" value="reservar" [(ngModel)]="opcion" />
+          <label class="form-check-label" for="op-reservar">
+            Reservar {{ n.reservables }} del stock y preparar las {{ n.faltan }} faltantes
+          </label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" id="op-hacer" name="opcion" value="hacer" [(ngModel)]="opcion" />
+          <label class="form-check-label" for="op-hacer">
+            No usar el stock y mandar a hacer las {{ n.pedidas }}
+          </label>
+        </div>
+      } @else {
+        <p class="small mb-0">No hay nada en stock para reservar: se mandan a hacer las {{ n.pedidas }}.</p>
+      }
     </div>
   }
 
-  <!-- El cliente es opcional, salvo que se encargue algo (ahí también hace falta el teléfono). -->
+  <!-- El cliente es opcional, salvo que sea un encargue (ahí también hace falta el teléfono). -->
   @if (!compacto() || hayFaltante) {
     <div class="row g-2 mt-1">
       <div class="col-sm-6">
@@ -89,9 +103,12 @@
   }
 
   <div class="d-flex align-items-center justify-content-between mt-3">
-    <span class="fs-5">Total: <strong class="num">{{ total | currency:'ARS':'symbol-narrow':'1.0-0' }}</strong></span>
+    <span class="fs-5">
+      {{ hayFaltante ? 'Total estimado:' : 'Total:' }}
+      <strong class="num">{{ total | currency:'ARS':'symbol-narrow':'1.0-0' }}</strong>
+    </span>
     <button type="submit" class="btn btn-primary px-4" [disabled]="!puedeEnviar">
-      {{ enviando() ? 'Registrando…' : 'Registrar' }}
+      {{ enviando() ? 'Registrando…' : hayFaltante ? 'Crear encargue' : 'Registrar' }}
     </button>
   </div>
 </form>

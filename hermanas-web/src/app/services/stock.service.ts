@@ -2,7 +2,7 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { Categoria, Variedad } from '../models';
+import { Categoria, Presentacion, Variedad } from '../models';
 import { AvisosService, avisarSiNo401 } from './avisos.service';
 
 // Guarda en memoria las categorías y variedades (con su stock).
@@ -82,6 +82,32 @@ export class StockService {
       .pipe(
         tap(() => this.variedades.update((l) => l.filter((v) => v.id !== id))),
       );
+  }
+
+  // Presentaciones de la categoría de una variedad (vienen con la lista de categorías).
+  presentacionesDe(categoriaId: number | null | undefined): Presentacion[] {
+    return this.categorias().find((c) => c.id === categoriaId)?.presentaciones ?? [];
+  }
+
+  // ---- Presentaciones ----
+  // Cambian precios o tamaños: recargo todo para que el panel vea los valores nuevos.
+
+  crearPresentacion(datos: Partial<Presentacion>) {
+    return this.http
+      .post<Presentacion>(`${this.url}/presentaciones`, datos)
+      .pipe(tap(() => this.cargar()));
+  }
+
+  editarPresentacion(id: number, datos: Partial<Presentacion>) {
+    return this.http
+      .patch<Presentacion>(`${this.url}/presentaciones/${id}`, datos)
+      .pipe(tap(() => this.cargar()));
+  }
+
+  eliminarPresentacion(id: number) {
+    return this.http
+      .delete(`${this.url}/presentaciones/${id}`)
+      .pipe(tap(() => this.cargar()));
   }
 
   private reemplazar(nueva: Variedad) {

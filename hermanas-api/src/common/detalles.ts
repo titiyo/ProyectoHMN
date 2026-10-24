@@ -1,11 +1,11 @@
 import { BadRequestException } from '@nestjs/common';
 import { validarCampos, validarEntero } from './validaciones';
-import { Modo } from '../ventas/entities/detalle-venta.entity';
 
-// Renglón tal como lo manda el front: cantidad en el modo elegido (2 docenas = 2).
+// Renglón tal como lo manda el front: cantidad en la presentación elegida
+// (2 con la presentación "docena" = 2 docenas).
 export interface RenglonPedido {
   variedadId: number;
-  modo: Modo;
+  presentacionId: number;
   cantidad: number;
 }
 
@@ -24,17 +24,14 @@ export function validarDetalles(detalles: unknown): RenglonPedido[] {
   }
   return detalles.map((item: RenglonPedido, i) => {
     const donde = `detalles[${i}]`;
-    validarCampos(item, ['variedadId', 'modo', 'cantidad']);
-    if (item.modo !== 'unidad' && item.modo !== 'docena') {
-      throw new BadRequestException(`${donde}.modo debe ser "unidad" o "docena"`);
-    }
+    validarCampos(item, ['variedadId', 'presentacionId', 'cantidad']);
     const cantidad = validarEntero(item.cantidad, `${donde}.cantidad`);
     if (cantidad === 0 || cantidad > 10000) {
       throw new BadRequestException(`${donde}.cantidad debe estar entre 1 y 10000`);
     }
     return {
       variedadId: validarEntero(item.variedadId, `${donde}.variedadId`),
-      modo: item.modo,
+      presentacionId: validarEntero(item.presentacionId, `${donde}.presentacionId`),
       cantidad,
     };
   });

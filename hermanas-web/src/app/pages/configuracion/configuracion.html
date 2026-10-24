@@ -1,97 +1,158 @@
 <h1 class="h3">Configuración</h1>
+<p class="text-muted small">
+  El stock se cuenta en la presentación más chica (milanesas sueltas, porciones).
+  Precio vacío en una variedad = usa el de la categoría.
+</p>
 
-<!-- ===== Categorías ===== -->
-<section class="panel mb-3">
-  <h2 class="h5">Categorías y precios</h2>
-  <p class="small text-muted">El precio de la categoría se usa para todas sus variedades, salvo las que tengan precio propio.</p>
-  <div class="table-responsive">
-    <table class="table align-middle">
-      <thead>
-        <tr><th>Nombre</th><th>Por encargue</th><th>$ unidad</th><th>$ docena</th><th></th></tr>
-      </thead>
-      <tbody>
-        @for (c of categorias(); track c.id) {
-          @let b = borradorCat(c);
-          <tr>
-            <td><input class="form-control form-control-sm" [name]="'cn' + c.id" [(ngModel)]="b.nombre" aria-label="Nombre" /></td>
-            <td><input class="form-check-input" type="checkbox" [(ngModel)]="b.porEncargue" aria-label="Por encargue" /></td>
-            <td><input class="form-control form-control-sm precio" type="number" min="0" [(ngModel)]="b.precioUnidad" placeholder="sin precio" aria-label="Precio por unidad" /></td>
-            <td><input class="form-control form-control-sm precio" type="number" min="0" [(ngModel)]="b.precioDocena" placeholder="sin precio" aria-label="Precio por docena" /></td>
-            <td class="text-end text-nowrap">
-              <button class="btn btn-sm btn-primary" (click)="guardarCategoria(c)">Guardar</button>
-              <button class="btn btn-sm btn-outline-danger ms-1" (click)="eliminarCategoria(c)" aria-label="Eliminar">×</button>
+@for (g of grupos(); track g.categoria.id) {
+  @let c = g.categoria;
+  @let bc = borradorCat(c);
+  <section class="panel mb-3">
+    <!-- Datos de la categoría -->
+    <div class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label small mb-1">Categoría</label>
+        <input class="form-control fw-bold" [(ngModel)]="bc.nombre" aria-label="Nombre de la categoría" />
+      </div>
+      <div class="col-md-5">
+        <label class="form-label small mb-1">Aclaración en el catálogo</label>
+        <input class="form-control" [(ngModel)]="bc.nota" placeholder="ej. Todas contienen queso" aria-label="Aclaración" />
+      </div>
+      <div class="col-auto">
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" [id]="'enc' + c.id" [(ngModel)]="bc.porEncargue" />
+          <label class="form-check-label" [for]="'enc' + c.id">Por encargue</label>
+        </div>
+      </div>
+      <div class="col text-end text-nowrap">
+        <button class="btn btn-sm btn-primary" (click)="guardarCategoria(c)">Guardar</button>
+        <button class="btn btn-sm btn-outline-danger ms-1" (click)="eliminarCategoria(c)" aria-label="Eliminar categoría">×</button>
+      </div>
+    </div>
+
+    <!-- Presentaciones -->
+    <h3 class="h6 text-uppercase mt-3">Presentaciones</h3>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead><tr><th>Nombre</th><th>Unidades de stock</th><th>Precio</th><th></th></tr></thead>
+        <tbody>
+          @for (p of c.presentaciones; track p.id) {
+            @let bp = borradorPres(p);
+            <tr>
+              <td><input class="form-control form-control-sm" [(ngModel)]="bp.nombre" aria-label="Nombre" /></td>
+              <td><input class="form-control form-control-sm corto" type="number" min="1" [(ngModel)]="bp.unidades" aria-label="Unidades" /></td>
+              <td><input class="form-control form-control-sm precio" type="number" min="0" [(ngModel)]="bp.precio" placeholder="sin precio" aria-label="Precio" /></td>
+              <td class="text-end text-nowrap">
+                <button class="btn btn-sm btn-primary" (click)="guardarPresentacion(p)">Guardar</button>
+                <button class="btn btn-sm btn-outline-danger ms-1" (click)="eliminarPresentacion(p)" aria-label="Eliminar">×</button>
+              </td>
+            </tr>
+          }
+          @let np = nuevaPres(c.id);
+          <tr class="table-light">
+            <td><input class="form-control form-control-sm" [(ngModel)]="np.nombre" placeholder="Nueva (ej. media docena)" aria-label="Nueva presentación" /></td>
+            <td><input class="form-control form-control-sm corto" type="number" min="1" [(ngModel)]="np.unidades" aria-label="Unidades" /></td>
+            <td><input class="form-control form-control-sm precio" type="number" min="0" [(ngModel)]="np.precio" placeholder="sin precio" aria-label="Precio" /></td>
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-primary" [disabled]="!np.nombre.trim() || !np.unidades" (click)="crearPresentacion(c)">Agregar</button>
             </td>
           </tr>
-        }
-        <tr class="table-light">
-          <td><input class="form-control form-control-sm" [(ngModel)]="nuevaCategoria.nombre" placeholder="Nueva categoría" aria-label="Nombre nueva categoría" /></td>
-          <td><input class="form-check-input" type="checkbox" [(ngModel)]="nuevaCategoria.porEncargue" aria-label="Por encargue" /></td>
-          <td><input class="form-control form-control-sm precio" type="number" min="0" [(ngModel)]="nuevaCategoria.precioUnidad" aria-label="Precio por unidad" /></td>
-          <td><input class="form-control form-control-sm precio" type="number" min="0" [(ngModel)]="nuevaCategoria.precioDocena" aria-label="Precio por docena" /></td>
-          <td class="text-end">
-            <button class="btn btn-sm btn-outline-primary" [disabled]="!nuevaCategoria.nombre.trim()" (click)="crearCategoria()">Agregar</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</section>
+        </tbody>
+      </table>
+    </div>
 
-<!-- ===== Variedades ===== -->
-<section class="panel">
-  <h2 class="h5">Variedades</h2>
-  <p class="small text-muted">Dejá el precio vacío para usar el de la categoría. "Visible" = aparece en el catálogo público.</p>
-
-  @for (g of grupos(); track g.categoria.id) {
-    <h3 class="h6 text-uppercase mt-3">{{ g.categoria.nombre }}</h3>
+    <!-- Variedades -->
+    <h3 class="h6 text-uppercase mt-3">Variedades</h3>
     <div class="table-responsive">
-      <table class="table table-sm align-middle">
+      <table class="table table-sm align-middle mb-0">
         <thead>
-          <tr><th>Nombre</th><th>Categoría</th><th>$ unidad</th><th>$ docena</th><th>Visible</th><th></th></tr>
+          <tr>
+            <th>Nombre</th>
+            <th>Categoría</th>
+            <th>Se vende</th>
+            @for (p of c.presentaciones; track p.id) { <th>$ {{ p.nombre }}</th> }
+            <th>Visible</th>
+            <th></th>
+          </tr>
         </thead>
         <tbody>
           @for (v of g.variedades; track v.id) {
-            @let b = borradorVar(v);
+            @let bv = borradorVar(v);
             <tr>
-              <td><input class="form-control form-control-sm" [(ngModel)]="b.nombre" aria-label="Nombre" /></td>
+              <td><input class="form-control form-control-sm" [(ngModel)]="bv.nombre" aria-label="Nombre" /></td>
               <td>
-                <select class="form-select form-select-sm" [(ngModel)]="b.categoriaId" aria-label="Categoría">
-                  @for (c of categorias(); track c.id) { <option [ngValue]="c.id">{{ c.nombre }}</option> }
+                <select class="form-select form-select-sm" [(ngModel)]="bv.categoriaId" aria-label="Categoría">
+                  @for (cat of categorias(); track cat.id) { <option [ngValue]="cat.id">{{ cat.nombre }}</option> }
                 </select>
               </td>
-              <td><input class="form-control form-control-sm precio" type="number" min="0" [(ngModel)]="b.precioUnidad"
-                         [placeholder]="g.categoria.precioUnidad ?? 'sin precio'" aria-label="Precio por unidad" /></td>
-              <td><input class="form-control form-control-sm precio" type="number" min="0" [(ngModel)]="b.precioDocena"
-                         [placeholder]="g.categoria.precioDocena ?? 'sin precio'" aria-label="Precio por docena" /></td>
-              <td><input class="form-check-input" type="checkbox" [(ngModel)]="b.visible" aria-label="Visible" /></td>
+              <td>
+                <select class="form-select form-select-sm" [(ngModel)]="bv.modo" aria-label="Se vende">
+                  <option value="hereda">Como la categoría ({{ c.porEncargue ? 'encargue' : 'stock' }})</option>
+                  <option value="stock">De stock</option>
+                  <option value="encargue">Por encargue</option>
+                </select>
+              </td>
+              @for (p of c.presentaciones; track p.id) {
+                <td>
+                  <input class="form-control form-control-sm precio" type="number" min="0"
+                         [(ngModel)]="bv.precios[p.id]" [disabled]="bv.categoriaId !== v.categoriaId"
+                         [placeholder]="p.precio ?? 'sin precio'" [attr.aria-label]="'Precio ' + p.nombre" />
+                </td>
+              }
+              <td><input class="form-check-input" type="checkbox" [(ngModel)]="bv.visible" aria-label="Visible" /></td>
               <td class="text-end text-nowrap">
                 <button class="btn btn-sm btn-primary" (click)="guardarVariedad(v)">Guardar</button>
                 <button class="btn btn-sm btn-outline-danger ms-1" (click)="eliminarVariedad(v)" aria-label="Eliminar">×</button>
               </td>
             </tr>
           }
+          @let nv = nuevaVar(c.id);
+          <tr class="table-light">
+            <td><input class="form-control form-control-sm" [(ngModel)]="nv.nombre" placeholder="Nueva variedad" aria-label="Nueva variedad" /></td>
+            <td colspan="2">
+              <input class="form-control form-control-sm corto d-inline-block" type="number" min="0" [(ngModel)]="nv.stock" aria-label="Stock inicial" />
+              <span class="small text-muted ms-1">stock inicial</span>
+            </td>
+            <td [attr.colspan]="c.presentaciones.length + 1"></td>
+            <td class="text-end">
+              <button class="btn btn-sm btn-outline-primary" [disabled]="!nv.nombre.trim()" (click)="crearVariedad(c)">Agregar</button>
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
-  }
+  </section>
+}
 
-  <h3 class="h6 text-uppercase mt-4">Agregar variedad</h3>
-  <form class="row g-2 align-items-end" (ngSubmit)="crearVariedad()">
-    <div class="col-md-4">
-      <input class="form-control" name="nombre" [(ngModel)]="nuevaVariedad.nombre" placeholder="Nombre" aria-label="Nombre" required />
+<!-- Nueva categoría (con su primera presentación) -->
+<section class="panel">
+  <h2 class="h5">Nueva categoría</h2>
+  <form class="row g-2 align-items-end" (ngSubmit)="crearCategoria()">
+    <div class="col-md-3">
+      <label class="form-label small mb-1" for="nc-nombre">Nombre</label>
+      <input class="form-control" id="nc-nombre" name="nombre" [(ngModel)]="nuevaCategoria.nombre" required />
     </div>
     <div class="col-md-3">
-      <select class="form-select" name="categoria" [(ngModel)]="nuevaVariedad.categoriaId" aria-label="Categoría">
-        <option [ngValue]="0" disabled>Categoría…</option>
-        @for (c of categorias(); track c.id) { <option [ngValue]="c.id">{{ c.nombre }}</option> }
-      </select>
+      <label class="form-label small mb-1" for="nc-nota">Aclaración</label>
+      <input class="form-control" id="nc-nota" name="nota" [(ngModel)]="nuevaCategoria.nota" />
     </div>
     <div class="col-6 col-md-2">
-      <input class="form-control" type="number" min="0" name="stock" [(ngModel)]="nuevaVariedad.stock" placeholder="Stock" aria-label="Stock inicial" />
+      <label class="form-label small mb-1" for="nc-pres">Primera presentación</label>
+      <input class="form-control" id="nc-pres" name="presentacion" [(ngModel)]="nuevaCategoria.presentacion" required />
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md-1">
+      <label class="form-label small mb-1" for="nc-u">Unidades</label>
+      <input class="form-control" id="nc-u" name="unidades" type="number" min="1" [(ngModel)]="nuevaCategoria.unidades" />
+    </div>
+    <div class="col-auto">
+      <div class="form-check mb-2">
+        <input class="form-check-input" type="checkbox" id="nc-enc" name="porEncargue" [(ngModel)]="nuevaCategoria.porEncargue" />
+        <label class="form-check-label" for="nc-enc">Por encargue</label>
+      </div>
+    </div>
+    <div class="col">
       <button class="btn btn-primary w-100" type="submit"
-              [disabled]="!nuevaVariedad.nombre.trim() || !nuevaVariedad.categoriaId">Agregar</button>
+              [disabled]="!nuevaCategoria.nombre.trim() || !nuevaCategoria.presentacion.trim()">Crear</button>
     </div>
   </form>
 </section>

@@ -51,8 +51,8 @@
                     @for (d of v.detalles; track d.id) {
                       <li>
                         {{ d.variedad.nombre }} —
-                        {{ d.modo === 'docena' ? enDocenas(d.cantidad) : d.cantidad + ' u' }}
-                        × {{ d.precioUnitario | currency:'ARS':'symbol-narrow':'1.0-0' }}{{ d.modo === 'docena' ? '/doc' : '' }}
+                        {{ d.cantidad / d.unidadesPorPresentacion }} {{ d.presentacionNombre }}
+                        × {{ d.precioUnitario | currency:'ARS':'symbol-narrow':'1.0-0' }}
                         = <strong>{{ d.subtotal | currency:'ARS':'symbol-narrow':'1.0-0' }}</strong>
                       </li>
                     }

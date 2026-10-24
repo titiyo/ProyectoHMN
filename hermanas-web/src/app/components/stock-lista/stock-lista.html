@@ -1,4 +1,5 @@
 @for (grupo of grupos(); track grupo.categoria.id) {
+  @let grande = presentacionGrande(grupo.categoria);
   <h3 class="h6 text-uppercase mt-3 mb-2 categoria">
     {{ grupo.categoria.nombre }}
     @if (grupo.categoria.porEncargue) {
@@ -9,29 +10,29 @@
   <ul class="list-unstyled mb-0" [class.row]="!compacto()" [class.g-2]="!compacto()">
     @for (v of grupo.variedades; track v.id) {
       <li [class.col-md-6]="!compacto()" [class.col-xl-4]="!compacto()">
-        <div class="fila" [class.agotado]="v.stock === 0 && !grupo.categoria.porEncargue"
-             [class.oculta]="!v.visible">
+        <div class="fila" [class.agotado]="v.stock === 0 && !esPorEncargue(v)" [class.oculta]="!v.visible">
           <span class="nombre text-truncate" [title]="v.nombre">{{ v.nombre }}</span>
 
-          @if (grupo.categoria.porEncargue) {
+          <!-- Las de encargue igual pueden tener stock (ej. reservado de un encargue cancelado) -->
+          @if (esPorEncargue(v) && v.stock === 0) {
             <span class="text-muted small">encargue</span>
           } @else {
-            <span class="cantidad num" [title]="enDocenas(v.stock)">{{ v.stock }}</span>
-            <div class="btn-group btn-group-sm">
-              @if (!compacto()) {
-                <button class="btn btn-outline-primary" [disabled]="ocupados().has(v.id) || v.stock < 12"
-                        (click)="ajustar(v, -12)" title="Restar una docena">−12</button>
-              }
-              <button class="btn btn-outline-primary" [disabled]="ocupados().has(v.id) || v.stock === 0"
-                      (click)="ajustar(v, -1)" aria-label="Restar uno">−</button>
-              <button class="btn btn-outline-primary" [disabled]="ocupados().has(v.id)"
-                      (click)="ajustar(v, 1)" aria-label="Sumar uno">+</button>
-              @if (!compacto()) {
-                <button class="btn btn-outline-primary" [disabled]="ocupados().has(v.id)"
-                        (click)="ajustar(v, 12)" title="Sumar una docena">+12</button>
-              }
-            </div>
+            <span class="cantidad num" [title]="enPresentaciones(v.stock, grupo.categoria.presentaciones)">{{ v.stock }}</span>
           }
+          <div class="btn-group btn-group-sm">
+            @if (!compacto() && grande) {
+              <button class="btn btn-outline-primary" [disabled]="ocupados().has(v.id) || v.stock < grande.unidades"
+                      (click)="ajustar(v, -grande.unidades)" [title]="'Restar una ' + grande.nombre">−{{ grande.unidades }}</button>
+            }
+            <button class="btn btn-outline-primary" [disabled]="ocupados().has(v.id) || v.stock === 0"
+                    (click)="ajustar(v, -1)" aria-label="Restar uno">−</button>
+            <button class="btn btn-outline-primary" [disabled]="ocupados().has(v.id)"
+                    (click)="ajustar(v, 1)" aria-label="Sumar uno">+</button>
+            @if (!compacto() && grande) {
+              <button class="btn btn-outline-primary" [disabled]="ocupados().has(v.id)"
+                      (click)="ajustar(v, grande.unidades)" [title]="'Sumar una ' + grande.nombre">+{{ grande.unidades }}</button>
+            }
+          </div>
         </div>
       </li>
     }

@@ -4,14 +4,13 @@ import { environment } from '../../environments/environment';
 
 export interface ItemCatalogo {
   nombre: string;
-  precioUnidad: number | null; // null = consultar
-  precioDocena: number | null;
+  precios: { presentacion: string; precio: number | null }[]; // null = consultar
   estado: 'disponible' | 'agotado' | 'encargue';
 }
 
 export interface CategoriaCatalogo {
   nombre: string;
-  porEncargue: boolean;
+  nota: string | null; // aclaración editable desde Configuración
   variedades: ItemCatalogo[];
 }
 

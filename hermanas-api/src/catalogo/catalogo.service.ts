@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Categoria } from '../categorias/entities/categoria.entity';
+import { esPorEncargue, precioEfectivo } from '../common/precios';
 
 export type EstadoCatalogo = 'disponible' | 'agotado' | 'encargue';
 
@@ -16,27 +17,37 @@ export class CatalogoService {
 
   async obtener() {
     const categorias = await this.categoriasRepository.find({
-      relations: { variedades: true },
-      order: { id: 'ASC', variedades: { nombre: 'ASC' } },
+      relations: { presentaciones: true, variedades: { precios: true } },
+      order: {
+        id: 'ASC',
+        presentaciones: { orden: 'ASC', unidades: 'ASC' },
+        variedades: { nombre: 'ASC' },
+      },
     });
 
     return categorias
       .map((categoria) => ({
         nombre: categoria.nombre,
-        porEncargue: categoria.porEncargue,
+        nota: categoria.nota,
         variedades: categoria.variedades
           .filter((v) => v.visible)
-          .map((v) => ({
-            nombre: v.nombre,
-            // Precio efectivo; null = "consultar".
-            precioUnidad: v.precioUnidad ?? categoria.precioUnidad,
-            precioDocena: v.precioDocena ?? categoria.precioDocena,
-            estado: (categoria.porEncargue
-              ? 'encargue'
-              : v.stock > 0
-                ? 'disponible'
-                : 'agotado') as EstadoCatalogo,
-          })),
+          .map((v) => {
+            // esPorEncargue necesita la categoría colgada de la variedad.
+            const variedad = { ...v, categoria };
+            return {
+              nombre: v.nombre,
+              // Precio efectivo de cada presentación; null = "consultar".
+              precios: categoria.presentaciones.map((p) => ({
+                presentacion: p.nombre,
+                precio: precioEfectivo(variedad, p),
+              })),
+              estado: (esPorEncargue(variedad)
+                ? 'encargue'
+                : v.stock > 0
+                  ? 'disponible'
+                  : 'agotado') as EstadoCatalogo,
+            };
+          }),
       }))
       .filter((c) => c.variedades.length > 0); // categorías vacías no se muestran
   }

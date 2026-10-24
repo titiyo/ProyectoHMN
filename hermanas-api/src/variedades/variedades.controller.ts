@@ -16,20 +16,14 @@ import { UpdateVariedadDto } from './dto/update-variedad.dto';
 import {
   MAX_INT,
   validarBooleano,
+  validarBooleanoOpcional,
   validarCampos,
   validarEntero,
   validarPrecio,
   validarTexto,
 } from '../common/validaciones';
 
-const CAMPOS = [
-  'nombre',
-  'categoriaId',
-  'precioUnidad',
-  'precioDocena',
-  'stock',
-  'visible',
-];
+const CAMPOS = ['nombre', 'categoriaId', 'porEncargue', 'stock', 'visible', 'precios'];
 
 @Controller('variedades')
 export class VariedadesController {
@@ -44,11 +38,21 @@ export class VariedadesController {
     if (esAlta || dto.categoriaId !== undefined) {
       limpio.categoriaId = validarEntero(dto.categoriaId, 'categoriaId');
     }
-    if (dto.precioUnidad !== undefined) {
-      limpio.precioUnidad = validarPrecio(dto.precioUnidad, 'precioUnidad');
+    if (dto.porEncargue !== undefined) {
+      limpio.porEncargue = validarBooleanoOpcional(dto.porEncargue, 'porEncargue');
     }
-    if (dto.precioDocena !== undefined) {
-      limpio.precioDocena = validarPrecio(dto.precioDocena, 'precioDocena');
+    // precios: [{ presentacionId, precio }]  (precio null = usar el de la categoría)
+    if (dto.precios !== undefined) {
+      if (!Array.isArray(dto.precios) || dto.precios.length > 20) {
+        throw new BadRequestException('precios debe ser una lista');
+      }
+      limpio.precios = dto.precios.map((p, i) => {
+        validarCampos(p, ['presentacionId', 'precio']);
+        return {
+          presentacionId: validarEntero(p.presentacionId, `precios[${i}].presentacionId`),
+          precio: validarPrecio(p.precio, `precios[${i}].precio`),
+        };
+      });
     }
     if (dto.stock !== undefined) {
       limpio.stock = validarEntero(dto.stock, 'stock');

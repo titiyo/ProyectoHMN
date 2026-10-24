@@ -2,10 +2,16 @@ import { EntityManager } from 'typeorm';
 import { Venta } from './entities/venta.entity';
 import { DetalleVenta } from './entities/detalle-venta.entity';
 
-// Renglón ya calculado (cantidad en unidades, precio copiado).
+// Renglón ya calculado (cantidad en unidades, precio y presentación copiados).
 export type RenglonVenta = Pick<
   DetalleVenta,
-  'variedadId' | 'modo' | 'cantidad' | 'precioUnitario' | 'subtotal'
+  | 'variedadId'
+  | 'presentacionId'
+  | 'presentacionNombre'
+  | 'unidadesPorPresentacion'
+  | 'cantidad'
+  | 'precioUnitario'
+  | 'subtotal'
 >;
 
 // Guarda la cabecera y los renglones dentro de la transacción que se le pase.
