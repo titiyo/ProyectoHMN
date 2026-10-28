@@ -1,15 +1,21 @@
-// Colores de la marca. Se definen ANTES de importar Bootstrap para que
-// sus botones, alertas y links usen estos valores en vez del azul por defecto.
-$verde-oscuro: #2f5233;
-$verde-salvia: #a3b899;
+// Colores de la marca (tomados del Instagram: papel crema, hojas verdes, logo negro).
+// Se definen ANTES de importar Bootstrap para que sus botones, alertas y links
+// usen estos valores en vez del azul por defecto.
+$verde-oscuro: #3e5a3a;   // hojas, títulos, botones principales
+$verde-noche: #2e4a2c;    // menú lateral y pie
+$verde-salvia: #a9b79c;
 $salvia-claro: #e3ebdd;
-$fondo: #f6f7f4;
+$terracota: #b5532f;      // acento: "Agregar", carrito
+$crema: #f4efe6;          // fondo (papel)
+$papel: #fbf8f2;          // tarjetas
+$tinta: #1f1d1a;
+$borde: #e4dbcb;
 
 $primary: $verde-oscuro;
 $secondary: $verde-salvia;
-$body-bg: $fondo;
-$body-color: #1d1d1b;
-$border-radius: 0.6rem;
+$body-bg: $crema;
+$body-color: $tinta;
+$border-radius: 0.75rem;
 $font-family-sans-serif: 'Nunito', system-ui, sans-serif;
 
 @import 'bootstrap/scss/bootstrap';
@@ -17,32 +23,101 @@ $font-family-sans-serif: 'Nunito', system-ui, sans-serif;
 // Variables CSS para usar en los .scss de cada componente.
 :root {
   --verde-oscuro: #{$verde-oscuro};
+  --verde-noche: #{$verde-noche};
   --verde-salvia: #{$verde-salvia};
   --salvia-claro: #{$salvia-claro};
+  --terracota: #{$terracota};
+  --crema: #{$crema};
+  --papel: #{$papel};
+  --tinta: #{$tinta};
+  --borde: #{$borde};
+  --texto-suave: #5e594f;
+  --sombra: 0 1px 2px rgba(31, 29, 26, 0.06), 0 8px 24px rgba(62, 90, 58, 0.08);
+  --sombra-alta: 0 2px 4px rgba(31, 29, 26, 0.06), 0 14px 32px rgba(62, 90, 58, 0.14);
 }
 
 h1, h2, h3, h4, h5 {
   color: $verde-oscuro;
-  font-weight: 700;
+  font-weight: 800;
+}
+
+// Letra cursiva del logo, para títulos de la marca.
+.cursiva {
+  font-family: 'Great Vibes', cursive;
+  font-weight: 400;
 }
 
 // Tarjeta de sección del panel (stock, venta, por hacer...).
 .panel {
-  background: #fff;
-  border: 1px solid $salvia-claro;
-  border-radius: $border-radius;
-  padding: 1rem;
+  background: $papel;
+  border: 1px solid $borde;
+  border-radius: 1rem;
+  padding: 1.1rem;
   height: 100%;
+  box-shadow: var(--sombra);
 }
 
 // "Hermanas" en cursiva, "EMPRENDEDORAS" en mayúsculas.
 .logo {
   line-height: 1;
-  color: #1d1d1b;
+  color: $tinta;
   text-decoration: none;
-  .cursiva { font-family: 'Great Vibes', cursive; font-size: 1.9rem; display: block; }
-  .mayus { font-size: 0.65rem; letter-spacing: 0.3em; font-weight: 700; }
+  .cursiva { font-size: 1.9rem; display: block; }
+  .mayus { font-size: 0.65rem; letter-spacing: 0.3em; font-weight: 800; }
+}
+
+// Botones redondeados de la marca (tienda y panel).
+.btn-terra {
+  --bs-btn-color: #fff;
+  --bs-btn-bg: #{$terracota};
+  --bs-btn-border-color: #{$terracota};
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #9a4426;
+  --bs-btn-hover-border-color: #9a4426;
+  --bs-btn-active-bg: #86391f;
+  --bs-btn-disabled-bg: #{$terracota};
+  --bs-btn-disabled-border-color: #{$terracota};
+}
+.btn-pill { border-radius: 999px; font-weight: 800; min-height: 44px; padding-inline: 1.3rem; }
+
+// Pastillas de opción (presentación, filtros).
+.chip {
+  border: 1.5px solid #cfc6b5;
+  background: transparent;
+  color: #3d3a35;
+  border-radius: 999px;
+  padding: 0.3rem 0.8rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  min-height: 34px;
+  cursor: pointer;
+  &:hover { border-color: $verde-oscuro; color: $verde-oscuro; }
+  &.activo { background: $verde-oscuro; border-color: $verde-oscuro; color: #fff; }
+}
+
+// Etiquetas de estado (catálogo y panel).
+.estado {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  &.disponible { background: $salvia-claro; color: $verde-noche; }
+  &.agotado { background: #f6e3c7; color: #7a3f0e; }
+  &.encargue { background: $papel; color: #3d3a35; border: 1px solid $borde; }
 }
 
 // Números alineados para que las columnas de stock y precios no bailen.
 .num { font-variant-numeric: tabular-nums; }
+
+// Botón secundario discreto pero legible (ej. "Descartar").
+.btn-suave {
+  --bs-btn-color: #3d3a35;
+  --bs-btn-border-color: #cfc6b5;
+  --bs-btn-hover-color: #7a3f0e;
+  --bs-btn-hover-bg: #f6e3c7;
+  --bs-btn-hover-border-color: #e5c79c;
+  background: transparent;
+}

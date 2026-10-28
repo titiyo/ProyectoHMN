@@ -1,34 +1,43 @@
-<nav class="navbar navbar-expand-lg bg-white border-bottom">
-  <div class="container-fluid px-3">
-    <a class="logo navbar-brand" routerLink="/panel">
-      <span class="cursiva">Hermanas</span>
-      <span class="mayus">EMPRENDEDORAS</span>
-    </a>
-    <button class="navbar-toggler" type="button" aria-label="Abrir menú"
-            [attr.aria-expanded]="menuAbierto()" (click)="menuAbierto.set(!menuAbierto())">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" [class.show]="menuAbierto()">
-      <ul class="navbar-nav ms-auto">
-        @for (link of links; track link.ruta) {
-          <li class="nav-item">
-            <a class="nav-link" [routerLink]="link.ruta" routerLinkActive="active"
-               [routerLinkActiveOptions]="{ exact: link.exacto }" (click)="menuAbierto.set(false)">
-              {{ link.texto }}
-            </a>
-          </li>
-        }
-        <li class="nav-item">
-          <a class="nav-link text-muted" routerLink="/" target="_blank">Ver catálogo ↗</a>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link text-danger" type="button" (click)="auth.salir()">Salir</button>
-        </li>
-      </ul>
+<div class="marco">
+  <!-- Menú lateral (en el celular se convierte en una barra arriba con botón de menú) -->
+  <nav class="lateral" aria-label="Panel">
+    <div class="cabeza">
+      <a class="logo" routerLink="/panel">
+        <span class="cursiva">Hermanas</span>
+        <span class="mayus">PANEL</span>
+      </a>
+      <button class="hamburguesa" type="button" aria-label="Abrir menú"
+              [attr.aria-expanded]="menuAbierto()" (click)="menuAbierto.set(!menuAbierto())">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
     </div>
-  </div>
-</nav>
 
-<main class="container-fluid px-3 py-3">
-  <router-outlet />
-</main>
+    <div class="enlaces" [class.abierto]="menuAbierto()">
+      @for (link of links; track link.ruta) {
+        <a [routerLink]="link.ruta" routerLinkActive="activo" [routerLinkActiveOptions]="{ exact: link.exacto }"
+           (click)="menuAbierto.set(false)">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            @for (d of link.icono; track $index) { <path [attr.d]="d" /> }
+          </svg>
+          {{ link.texto }}
+          @if (link.ruta === '/panel/pedidos-web' && pedidosWeb.nuevos() > 0) {
+            <span class="globo" [attr.aria-label]="pedidosWeb.nuevos() + ' nuevos'">{{ pedidosWeb.nuevos() }}</span>
+          }
+        </a>
+      }
+      <hr />
+      <a routerLink="/" target="_blank">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></svg>
+        Ver la tienda
+      </a>
+      <button type="button" (click)="auth.salir()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></svg>
+        Salir
+      </button>
+    </div>
+  </nav>
+
+  <main class="contenido">
+    <router-outlet />
+  </main>
+</div>

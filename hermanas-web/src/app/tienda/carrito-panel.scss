@@ -1,0 +1,59 @@
+.capa { position: fixed; inset: 0; z-index: 1050; display: flex; justify-content: flex-end; }
+.fondo { position: absolute; inset: 0; background: rgba(31, 29, 26, 0.38); border: 0; cursor: pointer; }
+.cajon {
+  position: relative; width: min(460px, 100%); height: 100%;
+  background: var(--crema); display: flex; flex-direction: column;
+  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.18);
+  animation: entrar 0.22s ease-out;
+}
+@keyframes entrar { from { transform: translateX(40px); opacity: 0; } }
+
+.encabezado {
+  padding: 16px 22px 10px; display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--borde);
+  h2 { margin: 0; font-size: 2.6rem; }
+}
+.contenido { flex: 1; overflow-y: auto; padding: 16px 22px; display: flex; flex-direction: column; gap: 12px; }
+.vacio { color: var(--texto-suave); text-align: center; margin: 40px 0; }
+
+.linea {
+  background: var(--papel); border-radius: 14px; padding: 12px 14px;
+  display: flex; gap: 12px; align-items: center;
+  strong { display: block; }
+}
+.sub { display: block; font-size: 0.82rem; color: var(--texto-suave); }
+.cantidad { display: flex; align-items: center; gap: 6px; span { min-width: 22px; text-align: center; font-weight: 800; } }
+.redondo {
+  width: 36px; height: 36px; border-radius: 999px; border: 1.5px solid #cfc6b5; background: #fff;
+  display: inline-flex; align-items: center; justify-content: center; color: #3d3a35; font-weight: 800;
+  &:hover { border-color: var(--verde-oscuro); color: var(--verde-oscuro); }
+}
+
+.total {
+  display: flex; justify-content: space-between; align-items: baseline; padding: 4px 2px;
+  span { font-weight: 700; }
+  strong { font-size: 1.6rem; color: var(--verde-oscuro); }
+}
+.nota { margin: 0; font-size: 0.82rem; color: #6b5a3c; background: #f6e3c7; border-radius: 12px; padding: 10px 12px; }
+.campo-label { font-size: 0.82rem; font-weight: 700; color: #4a463f; display: flex; flex-direction: column; gap: 4px; }
+.opcional { font-weight: 600; color: #6b655b; }
+.form-control, .form-select { min-height: 44px; border-radius: 12px; border: 1.5px solid #cfc6b5; font-weight: 600; }
+
+// Fuera de la pantalla (no display:none: algunos robots se saltean los campos ocultos así).
+.trampa { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+
+.mensaje {
+  background: var(--papel); border-radius: 12px; padding: 10px 12px;
+  summary { cursor: pointer; font-weight: 700; font-size: 0.88rem; }
+  p { white-space: pre-line; font-size: 0.82rem; color: #3d3a35; margin: 8px 0 0; }
+}
+
+.pie { padding: 14px 22px 22px; border-top: 1px solid var(--borde); }
+.grande { min-height: 52px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.apagado { background: #ddd5c6; color: #6b655b; border: 0; opacity: 1; }
+
+.listo-enviado {
+  align-items: center; justify-content: center; text-align: center; color: var(--verde-oscuro);
+  h3 { font-size: 1.3rem; }
+  p { color: var(--texto-suave); }
+}

@@ -67,6 +67,7 @@
       <table class="table table-sm align-middle mb-0">
         <thead>
           <tr>
+            <th>Foto</th>
             <th>Nombre</th>
             <th>Categoría</th>
             <th>Se vende</th>
@@ -79,6 +80,26 @@
           @for (v of g.variedades; track v.id) {
             @let bv = borradorVar(v);
             <tr>
+              <!-- Foto: miniatura + subir/cambiar (el input de archivo va escondido dentro del label) -->
+              <td class="text-nowrap">
+                <div class="d-flex align-items-center gap-2">
+                  @if (v.foto) {
+                    <img [src]="v.foto" [alt]="'Foto de ' + v.nombre" class="miniatura" />
+                  } @else {
+                    <span class="miniatura sin-foto">sin foto</span>
+                  }
+                  <div class="d-flex flex-column gap-1">
+                    <label class="btn btn-sm btn-outline-primary mb-0" [class.disabled]="subiendo() === v.id">
+                      {{ subiendo() === v.id ? 'Subiendo…' : v.foto ? 'Cambiar' : 'Subir' }}
+                      <input type="file" accept="image/jpeg,image/png,image/webp" class="d-none"
+                             [disabled]="subiendo() === v.id" (change)="subirFoto(v, $event)" />
+                    </label>
+                    @if (v.foto) {
+                      <button type="button" class="btn btn-sm btn-link text-danger p-0" (click)="quitarFoto(v)">Quitar</button>
+                    }
+                  </div>
+                </div>
+              </td>
               <td><input class="form-control form-control-sm" [(ngModel)]="bv.nombre" aria-label="Nombre" /></td>
               <td>
                 <select class="form-select form-select-sm" [(ngModel)]="bv.categoriaId" aria-label="Categoría">
@@ -108,6 +129,7 @@
           }
           @let nv = nuevaVar(c.id);
           <tr class="table-light">
+            <td></td>
             <td><input class="form-control form-control-sm" [(ngModel)]="nv.nombre" placeholder="Nueva variedad" aria-label="Nueva variedad" /></td>
             <td colspan="2">
               <input class="form-control form-control-sm corto d-inline-block" type="number" min="0" [(ngModel)]="nv.stock" aria-label="Stock inicial" />

@@ -1,0 +1,103 @@
+@if (carrito.abierto()) {
+  <div class="capa">
+    <button type="button" class="fondo" aria-label="Cerrar el carrito" (click)="carrito.abierto.set(false)"></button>
+    <aside aria-label="Tu pedido" class="cajon">
+      <div class="encabezado">
+        <h2 class="cursiva">Tu pedido</h2>
+        <button type="button" class="redondo" aria-label="Cerrar" (click)="carrito.abierto.set(false)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+
+      @if (enviado()) {
+        <!-- Después de tocar el botón: confirmación y carrito nuevo -->
+        <div class="contenido listo-enviado">
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8.5 8.5 0 0 1-12.6 7.4L3 21l1.6-5.2A8.5 8.5 0 1 1 21 12Z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>
+          <h3>¡Se abrió WhatsApp con tu pedido!</h3>
+          <p>Si no se abrió, <a [href]="enlace()" target="_blank" rel="noopener">tocá acá</a>. Te confirmamos por ahí.</p>
+          <button type="button" class="btn btn-primary btn-pill" (click)="terminar()">Listo, empezar otro pedido</button>
+        </div>
+      } @else {
+        <div class="contenido">
+          @if (carrito.cantidad() === 0) {
+            <p class="vacio">Todavía no agregaste nada.<br />Elegí tus variedades del menú.</p>
+          }
+
+          @for (l of carrito.lineas(); track l.variedadId + '-' + l.presentacionId) {
+            <div class="linea">
+              <div class="flex-grow-1" style="min-width: 0">
+                <strong>{{ l.item.nombre }}</strong>
+                <span class="sub">{{ l.categoria.nombre }}</span>
+                <span class="sub num">{{ detalle(l) }}</span>
+                @if (l.item.estado === 'agotado') { <span class="estado agotado mt-1">A preguntar</span> }
+              </div>
+              <div class="cantidad">
+                <button type="button" class="redondo" (click)="carrito.cambiar(l, -1)" aria-label="Quitar uno">−</button>
+                <span class="num">{{ l.cantidad }}</span>
+                <button type="button" class="redondo" (click)="carrito.cambiar(l, 1)" aria-label="Agregar uno">+</button>
+              </div>
+            </div>
+          }
+
+          @if (carrito.cantidad() > 0) {
+            <div class="total">
+              <span>Total estimado</span>
+              <strong class="num">{{ pesos(carrito.total()) }}</strong>
+            </div>
+            @if (carrito.hayAPreguntar()) {
+              <p class="nota">Las marcadas "a preguntar" están agotadas: te confirmamos por WhatsApp si llegamos a prepararlas.</p>
+            }
+            @if (carrito.haySinPrecio()) {
+              <p class="nota">Algunos productos todavía no tienen precio cargado: te lo pasamos por WhatsApp.</p>
+            }
+
+            <h3 class="h6 mt-3 mb-0">Retiro en Pinto 1128</h3>
+            <label class="campo-label">Tu nombre
+              <input class="form-control" name="nombre" autocomplete="name" placeholder="Ej. Ana" maxlength="60"
+                     [ngModel]="nombre()" (ngModelChange)="nombre.set($event)" />
+            </label>
+            <div class="row g-2">
+              <label class="campo-label col-6">Día
+                <select class="form-select" name="dia" [ngModel]="dia()" (ngModelChange)="cambiarDia($event)">
+                  <option value="">Elegir…</option>
+                  @for (d of dias; track d.valor) { <option [value]="d.valor">{{ d.texto }}</option> }
+                </select>
+              </label>
+              <label class="campo-label col-6">Horario
+                <select class="form-select" name="horario" [ngModel]="horario()" (ngModelChange)="horario.set($event)">
+                  <option value="">Elegir…</option>
+                  @for (h of horarios(); track h) { <option [value]="h">{{ h }}</option> }
+                </select>
+              </label>
+            </div>
+            <label class="campo-label">Teléfono <span class="opcional">(opcional)</span>
+              <input class="form-control" type="tel" name="telefono" autocomplete="tel" placeholder="Ej. 249 4123456" maxlength="30"
+                     [ngModel]="telefono()" (ngModelChange)="telefono.set($event)" />
+            </label>
+            <!-- Campo trampa: oculto para personas; los robots lo completan y su pedido se ignora. -->
+            <input class="trampa" name="web" tabindex="-1" autocomplete="off" aria-hidden="true" [(ngModel)]="web" />
+            <p class="sub mb-0">Envíos a domicilio: próximamente.</p>
+
+            <details class="mensaje">
+              <summary>Ver el mensaje que se va a enviar</summary>
+              <p>{{ mensaje() }}</p>
+            </details>
+          }
+        </div>
+
+        @if (carrito.cantidad() > 0) {
+          <div class="pie">
+            @if (listo()) {
+              <a class="btn btn-primary btn-pill w-100 grande" [href]="enlace()" target="_blank" rel="noopener" (click)="enviar()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8.5 8.5 0 0 1-12.6 7.4L3 21l1.6-5.2A8.5 8.5 0 1 1 21 12Z"/></svg>
+                Encargar por WhatsApp
+              </a>
+            } @else {
+              <button type="button" class="btn btn-pill w-100 grande apagado" disabled>Completá nombre, día y horario</button>
+            }
+          </div>
+        }
+      }
+    </aside>
+  </div>
+}

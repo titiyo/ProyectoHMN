@@ -15,12 +15,22 @@ export const routes: Routes = [
       { path: 'nueva-venta', loadComponent: () => import('./pages/nueva-venta/nueva-venta').then((m) => m.NuevaVenta), title: 'Nueva venta' },
       { path: 'ventas', loadComponent: () => import('./pages/ventas/ventas').then((m) => m.Ventas), title: 'Ventas' },
       { path: 'encargues', loadComponent: () => import('./pages/encargues/encargues').then((m) => m.Encargues), title: 'Encargues' },
+      { path: 'pedidos-web', loadComponent: () => import('./pages/pedidos-web/pedidos-web').then((m) => m.PedidosWebPage), title: 'Pedidos web' },
       { path: 'por-hacer', loadComponent: () => import('./pages/por-hacer/por-hacer').then((m) => m.PorHacerPage), title: 'Por hacer' },
       { path: 'configuracion', loadComponent: () => import('./pages/configuracion/configuracion').then((m) => m.Configuracion), title: 'Configuración' },
     ],
   },
   { path: 'login', loadComponent: () => import('./pages/login/login').then((m) => m.Login), title: 'Ingresar' },
-  // Catálogo público en la raíz.
-  { path: '', loadComponent: () => import('./pages/catalogo/catalogo').then((m) => m.Catalogo), title: 'Hermanas Emprendedoras', pathMatch: 'full' },
+  // Tienda pública: portada en "/" y una página por categoría ("/tartas-integrales").
+  // Va DESPUÉS de panel y login: Angular prueba las rutas en orden, y ":slug" agarraría
+  // cualquier palabra (incluidas "panel" y "login") si estuviera antes.
+  {
+    path: '',
+    loadComponent: () => import('./tienda/tienda-layout').then((m) => m.TiendaLayout),
+    children: [
+      { path: '', loadComponent: () => import('./tienda/tienda-inicio').then((m) => m.TiendaInicio), title: 'Hermanas Emprendedoras', pathMatch: 'full' },
+      { path: ':slug', loadComponent: () => import('./tienda/tienda-categoria').then((m) => m.TiendaCategoria), title: 'Hermanas Emprendedoras' },
+    ],
+  },
   { path: '**', redirectTo: '' },
 ];

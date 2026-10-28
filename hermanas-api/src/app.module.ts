@@ -11,6 +11,7 @@ import { EncarguesModule } from './encargues/encargues.module';
 import { CatalogoModule } from './catalogo/catalogo.module';
 import { AuthModule } from './auth/auth.module';
 import { PresentacionesModule } from './presentaciones/presentaciones.module';
+import { PedidosWebModule } from './pedidos-web/pedidos-web.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { PresentacionesModule } from './presentaciones/presentaciones.module';
     CatalogoModule,
     AuthModule,
     PresentacionesModule,
+    PedidosWebModule,
   ],
   controllers: [AppController],
   providers: [AppService],

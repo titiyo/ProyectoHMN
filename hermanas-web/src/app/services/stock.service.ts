@@ -77,6 +77,21 @@ export class StockService {
       .pipe(tap((v) => this.reemplazar(v)));
   }
 
+  // La foto viaja como formulario "multipart" (así se mandan archivos por HTTP).
+  subirFoto(id: number, archivo: File) {
+    const datos = new FormData();
+    datos.append('foto', archivo);
+    return this.http
+      .post<Variedad>(`${this.url}/variedades/${id}/foto`, datos)
+      .pipe(tap((v) => this.reemplazar(v)));
+  }
+
+  quitarFoto(id: number) {
+    return this.http
+      .delete<Variedad>(`${this.url}/variedades/${id}/foto`)
+      .pipe(tap((v) => this.reemplazar(v)));
+  }
+
   eliminarVariedad(id: number) {
     return this.http
       .delete(`${this.url}/variedades/${id}`)

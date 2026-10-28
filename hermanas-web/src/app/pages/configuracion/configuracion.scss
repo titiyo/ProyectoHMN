@@ -3,7 +3,7 @@
 .corto { width: 5rem; }
 
 // Que el nombre y los selects no se achiquen hasta cortarse: la tabla se desplaza de costado.
-td:first-child input { min-width: 11rem; }
+input[aria-label="Nombre"], input[aria-label="Nueva variedad"] { min-width: 11rem; }
 td select { min-width: 9rem; }
 
 th {
@@ -11,4 +11,11 @@ th {
   font-weight: 600;
   color: #555;
   white-space: nowrap;
+}
+
+// Miniatura de la foto de cada variedad (4:3, como en la tienda).
+.miniatura { width: 64px; height: 48px; border-radius: 8px; object-fit: cover; flex: none; }
+.sin-foto {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--salvia-claro); color: var(--verde-oscuro); font-size: .7rem; font-weight: 700;
 }

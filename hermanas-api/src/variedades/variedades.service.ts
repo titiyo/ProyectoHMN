@@ -15,6 +15,7 @@ import { DetalleVenta } from '../ventas/entities/detalle-venta.entity';
 import { DetalleEncargue } from '../encargues/entities/detalle-encargue.entity';
 import { Presentacion } from '../presentaciones/entities/presentacion.entity';
 import { MAX_INT, normalizar } from '../common/validaciones';
+import { subirFoto } from '../common/cloudinary';
 
 export interface FiltrosVariedad {
   nombre?: string;
@@ -149,6 +150,20 @@ export class VariedadesService {
     if (resultado.affected === 0) {
       throw new BadRequestException('El stock no puede quedar negativo.');
     }
+    return this.findOne(id);
+  }
+
+  async subirFoto(id: number, archivo: { buffer: Buffer; mimetype: string; size: number }) {
+    await this.findOne(id); // 404 antes de subir nada
+    const foto = await subirFoto(archivo);
+    await this.variedadesRepository.update(id, { foto });
+    return this.findOne(id);
+  }
+
+  // Solo se olvida la dirección; la imagen queda en Cloudinary (no molesta y no se pierde).
+  async quitarFoto(id: number) {
+    await this.findOne(id);
+    await this.variedadesRepository.update(id, { foto: null });
     return this.findOne(id);
   }
 

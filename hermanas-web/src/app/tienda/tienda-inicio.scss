@@ -1,0 +1,54 @@
+.interior { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
+
+// ---- Portada ----
+.portada {
+  position: relative; overflow: hidden; text-align: center;
+  padding: 72px 24px 56px;
+}
+.contenido { position: relative; max-width: 720px; margin: 0 auto; }
+.marca {
+  margin: 0; line-height: 1; color: var(--tinta);
+  .cursiva { display: block; font-size: clamp(5rem, 16vw, 9rem); }
+  .mayus { display: block; font-size: clamp(0.85rem, 2.4vw, 1.15rem); letter-spacing: 0.42em; font-weight: 800; margin-top: -0.4rem; }
+}
+.bajada { margin: 22px 0 0; color: var(--verde-oscuro); font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; font-size: 0.85rem; }
+.texto { font-size: 1.15rem; line-height: 1.55; color: #4a463f; margin: 14px auto 26px; max-width: 34em; }
+.acciones { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; .btn { display: inline-flex; align-items: center; gap: 8px; } }
+
+// Hojas verdes de fondo, como las esquinas de las placas de Instagram.
+.hoja { position: absolute; fill: var(--verde-salvia); pointer-events: none; }
+.hoja .nervio { fill: none; stroke: #7f9572; stroke-width: 2; }
+.hoja-1 { width: 220px; top: -40px; left: -50px; transform: rotate(35deg); opacity: 0.45; }
+.hoja-2 { width: 170px; bottom: -40px; right: -30px; transform: rotate(-140deg); opacity: 0.4; }
+.hoja-3 { width: 90px; top: 40px; right: 12%; transform: rotate(-20deg); opacity: 0.3; }
+
+// ---- Cómo funciona ----
+.pasos { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 12px; }
+.paso {
+  background: var(--papel); border-radius: 18px; padding: 18px 20px; display: flex; gap: 14px; align-items: center;
+  strong { display: block; }
+  span:not(.numero) { color: var(--texto-suave); font-size: 0.9rem; }
+}
+.numero {
+  width: 44px; height: 44px; border-radius: 999px; background: var(--salvia-claro); color: var(--verde-oscuro);
+  display: inline-flex; align-items: center; justify-content: center; font-weight: 800; flex: none;
+}
+
+// ---- Franjas por categoría ----
+.seccion { padding-top: 34px; }
+.titulo {
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 10px;
+  h2 { margin: 0; font-size: clamp(2.6rem, 6vw, 3.4rem); line-height: 1; }
+  p { margin: 4px 0 0; color: var(--texto-suave); font-weight: 600; }
+}
+.fila {
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(230px, 260px); gap: 20px;
+  overflow-x: auto; scroll-snap-type: x mandatory; padding: 6px 4px 18px; scrollbar-width: thin;
+  > * { scroll-snap-align: start; }
+}
+.ver-mas {
+  border: 2px dashed #b9c8ac; border-radius: 18px; color: var(--verde-oscuro); text-decoration: none;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 260px; font-weight: 800;
+  .cursiva { font-size: 2.6rem; }
+  &:hover { background: var(--papel); color: var(--verde-oscuro); }
+}

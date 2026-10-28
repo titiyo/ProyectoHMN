@@ -22,12 +22,16 @@ export class VentasService {
   private avisos = inject(AvisosService);
   private url = `${environment.apiUrl}/ventas`;
 
-  // Las últimas ventas del día, para el tablero.
+  // Las ventas de hoy (para el total del tablero) y las últimas 6 (para la lista).
+  readonly deHoy = signal<Venta[]>([]);
   readonly ultimas = signal<Venta[]>([]);
 
   cargarUltimas() {
     this.listar(hoy(), hoy()).subscribe({
-      next: (v) => this.ultimas.set(v.slice(0, 6)),
+      next: (v) => {
+        this.deHoy.set(v);
+        this.ultimas.set(v.slice(0, 6));
+      },
       error: avisarSiNo401(this.avisos),
     });
   }

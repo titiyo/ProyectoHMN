@@ -1,0 +1,15 @@
+.titulo { margin: 0; font-size: 3.6rem; line-height: 1; }
+.interruptor {
+  background: var(--papel); border-radius: 999px; padding: 10px 18px 10px 54px; box-shadow: var(--sombra); font-weight: 700;
+  .form-check-input { width: 2.6em; height: 1.4em; cursor: pointer; }
+}
+.grilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
+.pedido {
+  background: var(--papel); border-radius: 18px; padding: 18px 20px; box-shadow: var(--sombra);
+  display: flex; flex-direction: column; gap: 12px;
+  &.apagado { opacity: 0.8; }
+}
+.cliente { font-size: 1.1rem; display: block; }
+.sub { display: block; font-size: 0.82rem; color: var(--texto-suave); }
+.renglones { margin: 0; padding-left: 18px; font-size: 0.9rem; line-height: 1.7; color: #3d3a35; }
+.total { color: var(--verde-noche); font-size: 1.15rem; }

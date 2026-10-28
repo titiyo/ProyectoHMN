@@ -6,8 +6,19 @@ import { esPorEncargue, precioEfectivo } from '../common/precios';
 
 export type EstadoCatalogo = 'disponible' | 'agotado' | 'encargue';
 
+// "Milanesas de soja rellenas" → "milanesas-de-soja-rellenas" (para la dirección de la página).
+export function slug(texto: string) {
+  return texto
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '') // saca tildes
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
 // Lo que ve el público. Es una "vista" armada a mano: se elige campo por campo qué sale,
-// así el stock exacto, los ids internos o las variedades ocultas nunca se filtran.
+// así el stock exacto o las variedades ocultas nunca se filtran. Los ids sí salen:
+// el carrito los necesita para mandar el pedido, y no dicen nada sensible.
 @Injectable()
 export class CatalogoService {
   constructor(
@@ -27,6 +38,8 @@ export class CatalogoService {
 
     return categorias
       .map((categoria) => ({
+        id: categoria.id,
+        slug: slug(categoria.nombre),
         nombre: categoria.nombre,
         nota: categoria.nota,
         variedades: categoria.variedades
@@ -35,10 +48,14 @@ export class CatalogoService {
             // esPorEncargue necesita la categoría colgada de la variedad.
             const variedad = { ...v, categoria };
             return {
+              id: v.id,
               nombre: v.nombre,
+              foto: v.foto,
               // Precio efectivo de cada presentación; null = "consultar".
               precios: categoria.presentaciones.map((p) => ({
+                presentacionId: p.id,
                 presentacion: p.nombre,
+                unidades: p.unidades,
                 precio: precioEfectivo(variedad, p),
               })),
               estado: (esPorEncargue(variedad)

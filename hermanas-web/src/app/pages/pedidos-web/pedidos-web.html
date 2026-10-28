@@ -1,0 +1,66 @@
+<div class="d-flex align-items-end justify-content-between gap-3 flex-wrap mb-3">
+  <div>
+    <h1 class="cursiva titulo">Pedidos web</h1>
+    <p class="text-muted mb-0" style="max-width: 40em">Lo que los clientes arman en el carrito de la tienda y te mandan por WhatsApp. Confirmá por chat y pasalo a encargue con un toque.</p>
+  </div>
+  @if (recibe() !== null) {
+    <div class="form-check form-switch interruptor">
+      <input class="form-check-input" type="checkbox" role="switch" id="recibe"
+             [checked]="recibe()" (change)="cambiarRecibe($any($event.target).checked)" />
+      <label class="form-check-label" for="recibe">{{ recibe() ? 'Recibiendo pedidos web' : 'Pedidos web pausados' }}</label>
+    </div>
+  }
+</div>
+
+<ul class="nav nav-pills gap-2 mb-3">
+  @for (f of filtros; track f.valor) {
+    <li class="nav-item">
+      <button type="button" class="chip" [class.activo]="filtro() === f.valor" [attr.aria-pressed]="filtro() === f.valor" (click)="elegir(f.valor)">
+        {{ f.texto }}{{ f.valor === 'nuevo' ? ' (' + nuevos() + ')' : '' }}
+      </button>
+    </li>
+  }
+</ul>
+
+<div class="grilla">
+  @for (p of pedidos(); track p.id) {
+    <article class="pedido" [class.apagado]="p.estado !== 'nuevo'">
+      <div class="d-flex justify-content-between gap-2">
+        <div>
+          <strong class="cliente">{{ p.cliente }}</strong>
+          <span class="sub">Retira {{ p.dia }}, {{ p.horario }}</span>
+          <span class="sub">Llegó {{ p.fecha | date: 'dd/MM HH:mm' }}</span>
+        </div>
+        <span class="estado align-self-start text-nowrap" [class.agotado]="p.estado === 'nuevo'" [class.disponible]="p.estado === 'encargue'" [class.encargue]="p.estado === 'descartado'">
+          {{ p.estado === 'nuevo' ? 'Nuevo' : p.estado === 'encargue' ? 'Encargue #' + p.encargueId : 'Descartado' }}
+        </span>
+      </div>
+      <ul class="renglones">
+        @for (d of p.detalles; track d.id) {
+          <li>
+            {{ d.cantidad }} {{ d.presentacionNombre }} — {{ d.descripcion }}
+            @if (d.aPreguntar) { <span class="estado agotado">a preguntar</span> }
+          </li>
+        }
+      </ul>
+      <div class="d-flex justify-content-between align-items-center">
+        @if (whatsapp(p); as wa) {
+          <a [href]="wa" target="_blank" rel="noopener" class="small fw-bold">Escribir a {{ p.telefono }}</a>
+        } @else {
+          <span class="small text-muted">{{ p.telefono ?? 'Sin teléfono' }}</span>
+        }
+        <strong class="total num">{{ p.totalEstimado | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</strong>
+      </div>
+      @if (p.estado === 'nuevo') {
+        <div class="d-flex gap-2 flex-wrap">
+          <button type="button" class="btn btn-primary btn-pill flex-grow-1" [disabled]="ocupado() === p.id" (click)="pasar(p)">
+            {{ ocupado() === p.id ? 'Pasando…' : 'Pasar a encargue' }}
+          </button>
+          <button type="button" class="btn btn-suave btn-pill" (click)="descartar(p)">Descartar</button>
+        </div>
+      }
+    </article>
+  } @empty {
+    <p class="text-muted">No hay pedidos {{ filtro() === 'nuevo' ? 'nuevos' : filtro() === 'encargue' ? 'pasados a encargue' : 'descartados' }}.</p>
+  }
+</div>

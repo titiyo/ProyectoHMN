@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Hermanas Emprendedoras API",
-    "description": "Etapas 1 a 8. Primero correr Auth > Login (completar la variable password). Los ids de ejemplo son los del seed en una base vacía. Cambiar baseUrl para probar contra Render.",
+    "description": "Etapas 1 a 9. Primero correr Auth > Login (completar la variable password). Los ids de ejemplo son los del seed en una base vacía. Cambiar baseUrl para probar contra Render. Para subir una foto: POST /variedades/:id/foto con form-data, campo \"foto\" (archivo).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -836,6 +836,120 @@
             "url": "{{baseUrl}}/catalogo",
             "auth": {
               "type": "noauth"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pedidos web",
+      "item": [
+        {
+          "name": "Crear pedido (público, lo usa el carrito)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "url": "{{baseUrl}}/pedidos-web",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente\": \"Ana\",\n  \"telefono\": \"2494111111\",\n  \"dia\": \"sáb 1/11\",\n  \"horario\": \"10:00 a 11:30\",\n  \"detalles\": [\n    {\n      \"variedadId\": 1,\n      \"presentacionId\": 2,\n      \"cantidad\": 1\n    },\n    {\n      \"variedadId\": 28,\n      \"presentacionId\": 9,\n      \"cantidad\": 2\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Error 400: carrito vacío",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "url": "{{baseUrl}}/pedidos-web",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente\": \"Ana\",\n  \"dia\": \"sáb 1/11\",\n  \"horario\": \"10:00 a 11:30\",\n  \"detalles\": []\n}"
+            }
+          }
+        },
+        {
+          "name": "Listar nuevos",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/pedidos-web?estado=nuevo"
+          }
+        },
+        {
+          "name": "Contar nuevos",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/pedidos-web/nuevos"
+          }
+        },
+        {
+          "name": "Pasar a encargue",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/pedidos-web/1/encargue"
+          }
+        },
+        {
+          "name": "Descartar",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/pedidos-web/1/descartar"
+          }
+        },
+        {
+          "name": "Ver interruptor",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/pedidos-web/ajustes"
+          }
+        },
+        {
+          "name": "Pausar pedidos web",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/pedidos-web/ajustes",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recibirPedidosWeb\": false\n}"
+            }
+          }
+        },
+        {
+          "name": "Reanudar pedidos web",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/pedidos-web/ajustes",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recibirPedidosWeb\": true\n}"
             }
           }
         }

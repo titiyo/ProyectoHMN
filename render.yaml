@@ -27,3 +27,5 @@ services:
         sync: false
       - key: FRONT_URL # URL(s) del front separadas por coma
         sync: false
+      - key: CLOUDINARY_URL # fotos: cloudinary://<api_key>:<api_secret>@<cloud_name>
+        sync: false

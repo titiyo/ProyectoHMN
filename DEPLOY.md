@@ -20,6 +20,19 @@ Los pasos 0 a 5 de abajo ya están hechos; quedan como referencia.
 
 ---
 
+## Fotos de las variedades (Cloudinary)
+
+Las fotos se suben desde el panel (Configuración → columna "Foto") y se guardan en
+Cloudinary, porque el disco gratis de Render se borra en cada deploy. Una sola vez:
+
+1. Crear cuenta gratis en <https://cloudinary.com> (plan Free alcanza de sobra).
+2. En el panel de Cloudinary → **Settings → API Keys** → copiar la
+   **API environment variable** (empieza con `cloudinary://`). Es secreta.
+3. Render → servicio → **Environment** → agregar `CLOUDINARY_URL` con ese valor → **Save**.
+4. Para probar en tu compu: la misma línea en `hermanas-api/.env`.
+
+Sin esa variable todo funciona igual; solo el botón "Subir" responde que falta configurarla.
+
 ## Etapa 8: vaciar Neon para el modelo nuevo (presentaciones + menú nuevo)
 
 El modelo cambió (precios por presentación, preparadas en encargues, menú nuevo) y

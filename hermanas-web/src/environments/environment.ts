@@ -4,4 +4,7 @@
 // Paso final: cuando el dominio funcione, pasar a 'https://api.hermanas.dpdns.org'.
 export const environment = {
   apiUrl: 'https://hermanas-api.onrender.com',
+  // WhatsApp que recibe los pedidos del carrito (549 + característica sin 0 + número sin 15).
+  // Por ahora el de prueba; después va el del local.
+  whatsapp: '5492494382000',
 };

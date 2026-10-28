@@ -1,5 +1,6 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { StockService } from '../../services/stock.service';
 import { AvisosService } from '../../services/avisos.service';
 import { Categoria, Presentacion, Variedad } from '../../models';
@@ -41,6 +42,7 @@ export class Configuracion {
   private nVar: Record<number, { nombre: string; stock: number }> = {};
 
   protected nuevaCategoria = this.categoriaVacia();
+  protected subiendo = signal<number | null>(null); // id de la variedad cuya foto se está subiendo
 
   // ---- Borradores: ??= crea la copia la primera vez y después devuelve la misma ----
 
@@ -138,6 +140,38 @@ export class Configuracion {
             }),
       } as Partial<Variedad>)
       .subscribe(this.alTerminar(`"${b.nombre}" guardada.`, () => delete this.bVar[v.id]));
+  }
+
+  // ---- Fotos ----
+
+  subirFoto(v: Variedad, evento: Event) {
+    const input = evento.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    input.value = ''; // permite volver a elegir el mismo archivo
+    if (!archivo) return;
+    // El back igual lo frena; acá se avisa antes de gastar tiempo subiendo.
+    if (archivo.size > 5 * 1024 * 1024) {
+      this.avisos.error(
+        new HttpErrorResponse({ status: 400, error: { message: 'La foto no puede pesar más de 5 MB.' } }),
+      );
+      return;
+    }
+    this.subiendo.set(v.id);
+    this.stock.subirFoto(v.id, archivo).subscribe({
+      next: () => {
+        this.subiendo.set(null);
+        this.avisos.exito(`Foto de "${v.nombre}" guardada.`);
+      },
+      error: (err) => {
+        this.subiendo.set(null);
+        this.avisos.error(err);
+      },
+    });
+  }
+
+  quitarFoto(v: Variedad) {
+    if (!confirm(`¿Quitar la foto de "${v.nombre}"?`)) return;
+    this.stock.quitarFoto(v.id).subscribe(this.alTerminar(`Se quitó la foto de "${v.nombre}".`));
   }
 
   // Si ya tiene ventas o encargues la API responde 409 con el consejo de ocultarla.

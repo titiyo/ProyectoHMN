@@ -37,6 +37,10 @@ export class Variedad {
   @Column({ type: 'int', default: 0 })
   stock!: number;
 
+  // Dirección de la foto (Cloudinary o una de las iniciales en /fotos/ del front). null = sin foto.
+  @Column({ type: 'varchar', nullable: true })
+  foto!: string | null;
+
   // false = no aparece en el catálogo público.
   @Column({ default: true })
   visible!: boolean;

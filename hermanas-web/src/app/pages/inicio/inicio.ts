@@ -5,12 +5,15 @@ import { StockLista } from '../../components/stock-lista/stock-lista';
 import { VentaForm } from '../../components/venta-form/venta-form';
 import { PorHacerResumen } from '../../components/por-hacer-resumen/por-hacer-resumen';
 import { VentasService } from '../../services/ventas.service';
+import { ResumenHoy } from '../../components/resumen-hoy/resumen-hoy';
 
-// Tablero: los mismos componentes que las páginas propias, en versión compacta.
+// Tablero: números del día arriba y, abajo, los mismos componentes que las páginas
+// propias en versión compacta.
 @Component({
   selector: 'app-inicio',
-  imports: [StockLista, VentaForm, PorHacerResumen, RouterLink, CurrencyPipe, DatePipe],
+  imports: [ResumenHoy, StockLista, VentaForm, PorHacerResumen, RouterLink, CurrencyPipe, DatePipe],
   template: `
+    <app-resumen-hoy />
     <div class="row g-3">
       <div class="col-lg-5">
         <section class="panel">

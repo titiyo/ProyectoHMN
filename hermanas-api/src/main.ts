@@ -17,6 +17,10 @@ async function bootstrap() {
   // Nombres repetidos que llegan a la base al mismo tiempo → 409 en vez de 500.
   app.useGlobalFilters(new DuplicadoFilter());
 
+  // Render pone un proxy adelante: confiar en él para que @Ip() dé la IP real del cliente
+  // (la usa el anti-spam de pedidos web) y no la del proxy.
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+
   // Render asigna el puerto en la variable PORT.
   await app.listen(process.env.PORT ?? 3000);
 }

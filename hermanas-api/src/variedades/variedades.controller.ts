@@ -9,7 +9,11 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { MAX_FOTO_BYTES } from '../common/cloudinary';
 import { VariedadesService, FiltrosVariedad } from './variedades.service';
 import { CreateVariedadDto } from './dto/create-variedad.dto';
 import { UpdateVariedadDto } from './dto/update-variedad.dto';
@@ -126,6 +130,23 @@ export class VariedadesController {
       );
     }
     return this.variedadesService.ajustarStock(id, delta);
+  }
+
+  // Subir o cambiar la foto: formulario multipart con el campo "foto".
+  // FileInterceptor la deja en memoria (no en disco) y corta si pesa de más.
+  @Post(':id/foto')
+  @UseInterceptors(FileInterceptor('foto', { limits: { fileSize: MAX_FOTO_BYTES } }))
+  subirFoto(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() archivo?: Express.Multer.File,
+  ) {
+    if (!archivo) throw new BadRequestException('Falta el archivo "foto".');
+    return this.variedadesService.subirFoto(id, archivo);
+  }
+
+  @Delete(':id/foto')
+  quitarFoto(@Param('id', ParseIntPipe) id: number) {
+    return this.variedadesService.quitarFoto(id);
   }
 
   @Delete(':id')

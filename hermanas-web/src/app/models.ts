@@ -36,6 +36,7 @@ export interface Variedad {
   precios: PrecioVariedad[]; // precios propios (pisan los de la categoría)
   porEncargue: boolean | null; // null = hereda de la categoría
   stock: number; // en la unidad más chica
+  foto: string | null; // dirección de la imagen (Cloudinary); null = sin foto
   visible: boolean;
 }
 
