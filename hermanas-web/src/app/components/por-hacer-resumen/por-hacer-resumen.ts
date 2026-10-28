@@ -28,6 +28,7 @@ import { enPresentaciones } from '../../models';
                 <tr class="small text-muted">
                   <td class="ps-4">
                     #{{ e.encargueId }} · {{ e.cliente }} · {{ e.telefono }}
+                    @if (e.retiro) { · <strong>retira {{ e.retiro }}</strong> }
                     @if (e.preparada > 0) { · <em>{{ e.preparada }} de {{ e.cantidad }} ya reservadas</em> }
                   </td>
                   <td class="text-end num">{{ e.faltan }}</td>

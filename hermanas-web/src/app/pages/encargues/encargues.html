@@ -8,13 +8,17 @@
 @if (mostrarAlta()) {
   <form class="panel mb-3" (ngSubmit)="crear()" style="max-width: 860px">
     <div class="row g-2 mb-2">
-      <div class="col-sm-6">
+      <div class="col-sm-4">
         <label class="form-label small mb-1" for="cli">Cliente</label>
         <input class="form-control" id="cli" name="cliente" [(ngModel)]="nuevo.cliente" required />
       </div>
-      <div class="col-sm-6">
+      <div class="col-sm-4">
         <label class="form-label small mb-1" for="tel">Teléfono</label>
         <input class="form-control" id="tel" name="telefono" type="tel" [(ngModel)]="nuevo.telefono" required />
+      </div>
+      <div class="col-sm-4">
+        <label class="form-label small mb-1" for="ret">Retira (opcional)</label>
+        <input class="form-control" id="ret" name="retiro" maxlength="80" [(ngModel)]="nuevo.retiro" placeholder="ej. jue 29/10, 18 hs" />
       </div>
     </div>
     @for (d of nuevo.detalles; track $index; let i = $index) {
@@ -71,6 +75,7 @@
             <div class="small text-muted">
               <a [href]="'tel:' + e.telefono">{{ e.telefono }}</a> · {{ e.fecha | date:'dd/MM HH:mm' }}
             </div>
+            @if (e.retiro) { <div class="small"><strong>Retira:</strong> {{ e.retiro }}</div> }
           </div>
           <span class="badge align-self-start">{{ e.estado }}</span>
         </div>

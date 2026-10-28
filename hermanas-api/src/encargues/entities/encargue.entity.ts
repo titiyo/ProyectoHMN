@@ -26,6 +26,11 @@ export class Encargue {
   @Column()
   telefono!: string;
 
+  // Cuándo pasa a retirar, como texto libre ("jue 29/10, 11:30 a 13:30").
+  // Opcional: los encargues viejos y los cargados sin fecha quedan en null.
+  @Column({ type: 'varchar', length: 80, nullable: true })
+  retiro!: string | null;
+
   @Column({ type: 'varchar', length: 12, default: 'pendiente' })
   estado!: EstadoEncargue;
 

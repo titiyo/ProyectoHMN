@@ -7,7 +7,7 @@
 @for (g of grupos(); track g.categoria.id) {
   @let c = g.categoria;
   @let bc = borradorCat(c);
-  <section class="panel mb-3">
+  <section class="panel mb-2">
     <!-- Datos de la categoría -->
     <div class="row g-2 align-items-end">
       <div class="col-md-4">
@@ -31,7 +31,7 @@
     </div>
 
     <!-- Presentaciones -->
-    <h3 class="h6 text-uppercase mt-3">Presentaciones</h3>
+    <h3 class="h6 text-uppercase mt-2 mb-1">Presentaciones</h3>
     <div class="table-responsive">
       <table class="table table-sm align-middle mb-0">
         <thead><tr><th>Nombre</th><th>Unidades de stock</th><th>Precio</th><th></th></tr></thead>
@@ -62,7 +62,7 @@
     </div>
 
     <!-- Variedades -->
-    <h3 class="h6 text-uppercase mt-3">Variedades</h3>
+    <h3 class="h6 text-uppercase mt-2 mb-1">Variedades</h3>
     <div class="table-responsive">
       <table class="table table-sm align-middle mb-0">
         <thead>
@@ -82,22 +82,20 @@
             <tr>
               <!-- Foto: miniatura + subir/cambiar (el input de archivo va escondido dentro del label) -->
               <td class="text-nowrap">
-                <div class="d-flex align-items-center gap-2">
+                <div class="d-flex align-items-center gap-1">
                   @if (v.foto) {
                     <img [src]="v.foto" [alt]="'Foto de ' + v.nombre" class="miniatura" />
                   } @else {
                     <span class="miniatura sin-foto">sin foto</span>
                   }
-                  <div class="d-flex flex-column gap-1">
-                    <label class="btn btn-sm btn-outline-primary mb-0" [class.disabled]="subiendo() === v.id">
-                      {{ subiendo() === v.id ? 'Subiendo…' : v.foto ? 'Cambiar' : 'Subir' }}
-                      <input type="file" accept="image/jpeg,image/png,image/webp" class="d-none"
-                             [disabled]="subiendo() === v.id" (change)="subirFoto(v, $event)" />
-                    </label>
-                    @if (v.foto) {
-                      <button type="button" class="btn btn-sm btn-link text-danger p-0" (click)="quitarFoto(v)">Quitar</button>
-                    }
-                  </div>
+                  <label class="btn btn-sm btn-outline-primary mb-0" [class.disabled]="subiendo() === v.id">
+                    {{ subiendo() === v.id ? 'Subiendo…' : v.foto ? 'Cambiar' : 'Subir' }}
+                    <input type="file" accept="image/jpeg,image/png,image/webp" class="d-none"
+                           [disabled]="subiendo() === v.id" (change)="subirFoto(v, $event)" />
+                  </label>
+                  @if (v.foto) {
+                    <button type="button" class="btn btn-sm btn-outline-danger" (click)="quitarFoto(v)" aria-label="Quitar la foto" title="Quitar la foto">×</button>
+                  }
                 </div>
               </td>
               <td><input class="form-control form-control-sm" [(ngModel)]="bv.nombre" aria-label="Nombre" /></td>

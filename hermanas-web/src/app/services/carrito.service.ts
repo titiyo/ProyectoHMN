@@ -122,7 +122,9 @@ export class CarritoService {
       dia: d.dia,
       horario: d.horario,
       web,
-      detalles: this.guardadas().map(({ variedadId, presentacionId, cantidad }) => ({
+      // lineas() y no guardadas(): solo lo que sigue en el catálogo, lo mismo que dice el
+      // WhatsApp. Si se manda un producto que ya se ocultó, la API rechaza el pedido entero.
+      detalles: this.lineas().map(({ variedadId, presentacionId, cantidad }) => ({
         variedadId,
         presentacionId,
         cantidad,
@@ -134,7 +136,11 @@ export class CarritoService {
 function leer(): LineaGuardada[] {
   try {
     const datos = JSON.parse(localStorage.getItem(CLAVE) ?? '[]');
-    return Array.isArray(datos) ? datos.filter((l) => l && l.variedadId && l.presentacionId && l.cantidad > 0) : [];
+    return Array.isArray(datos)
+      ? datos
+          .filter((l) => l && l.variedadId && l.presentacionId && Number.isInteger(l.cantidad) && l.cantidad > 0)
+          .map((l) => ({ variedadId: l.variedadId, presentacionId: l.presentacionId, cantidad: Math.min(l.cantidad, 100) }))
+      : [];
   } catch {
     return [];
   }

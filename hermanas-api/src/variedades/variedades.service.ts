@@ -14,6 +14,7 @@ import { CategoriasService } from '../categorias/categorias.service';
 import { DetalleVenta } from '../ventas/entities/detalle-venta.entity';
 import { DetalleEncargue } from '../encargues/entities/detalle-encargue.entity';
 import { Presentacion } from '../presentaciones/entities/presentacion.entity';
+import { DetallePedidoWeb } from '../pedidos-web/entities/pedido-web.entity';
 import { MAX_INT, normalizar } from '../common/validaciones';
 import { subirFoto } from '../common/cloudinary';
 
@@ -172,10 +173,11 @@ export class VariedadesService {
     // Si ya se vendió o encargó, borrarla rompería el historial: 409 y que se oculte.
     const usos =
       (await this.detallesRepository.countBy({ variedadId: id })) +
-      (await this.detallesEncargueRepository.countBy({ variedadId: id }));
+      (await this.detallesEncargueRepository.countBy({ variedadId: id })) +
+      (await this.dataSource.getRepository(DetallePedidoWeb).countBy({ variedadId: id }));
     if (usos > 0) {
       throw new ConflictException(
-        `No se puede eliminar la variedad con ID ${id} porque tiene ventas o encargues. Ocultala con visible = false.`,
+        `No se puede eliminar la variedad con ID ${id} porque tiene ventas, encargues o pedidos web. Ocultala con visible = false.`,
       );
     }
     await this.variedadesRepository.delete(id);

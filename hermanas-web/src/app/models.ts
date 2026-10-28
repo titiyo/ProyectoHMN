@@ -77,6 +77,7 @@ export interface Encargue {
   fecha: string;
   cliente: string;
   telefono: string;
+  retiro: string | null; // "jue 29/10, 11:30 a 13:30" (los pedidos web lo traen)
   estado: EstadoEncargue;
   detalles: DetalleEncargue[];
 }
@@ -90,6 +91,7 @@ export interface PorHacer {
       encargueId: number;
       cliente: string;
       telefono: string;
+      retiro: string | null;
       fecha: string;
       presentacion: string;
       cantidad: number;

@@ -151,19 +151,34 @@ export class PedidosWebService {
         throw new ConflictException('Ese pedido ya se pasó a encargue o se descartó.');
       }
       const detalles = await manager.findBy(DetallePedidoWeb, { pedidoId: id });
+      if (detalles.length === 0) {
+        throw new ConflictException('Ese pedido no tiene productos; descartalo.');
+      }
       const presentaciones = await manager.findBy(Presentacion, {
         id: In(detalles.map((d) => d.presentacionId)),
+      });
+      const variedades = await manager.findBy(Variedad, {
+        id: In(detalles.map((d) => d.variedadId)),
       });
 
       const encargue = await manager.save(Encargue, {
         cliente: pedido.cliente,
         telefono: pedido.telefono ?? 'por WhatsApp',
+        retiro: `${pedido.dia}, ${pedido.horario}`.slice(0, 80),
       });
       for (const d of detalles) {
         const p = presentaciones.find((x) => x.id === d.presentacionId);
         if (!p) {
           throw new ConflictException(
             `La presentación "${d.presentacionNombre}" ya no existe; cargá ese encargue a mano.`,
+          );
+        }
+        // Si la variedad se movió de categoría después del pedido, la presentación ya no
+        // le corresponde (ej. "docena" de rolls en una tarta) y no se podría cobrar al entregar.
+        const v = variedades.find((x) => x.id === d.variedadId);
+        if (!v || v.categoriaId !== p.categoriaId) {
+          throw new ConflictException(
+            `"${d.descripcion}" cambió de categoría desde que se hizo el pedido; cargá ese encargue a mano.`,
           );
         }
         await manager.save(DetalleEncargue, {

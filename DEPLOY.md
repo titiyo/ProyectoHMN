@@ -6,17 +6,23 @@ antes de pasar al siguiente. Todo en planes gratis.
 > La base de producción arranca vacía: el seed carga las categorías y variedades,
 > pero **sin precios ni stock**. Los datos de prueba de tu compu no se suben.
 
-## Estado (24/10/2026)
+## Estado (28/10/2026)
 
 | Parte    | Servicio | URL / dato | Estado |
 |----------|----------|------------|--------|
-| Base     | Neon (Postgres 16, AWS US East 1, con pooling) | — | ⚠️ Hay que vaciarla para la Etapa 8 (ver abajo) |
-| API      | Render (Blueprint `render.yaml`) | https://hermanas-api.onrender.com | ✅ `DATABASE_URL` y `ADMIN_PASSWORD_HASH` cargados, `JWT_SECRET` generado |
-| Front    | Netlify (proyecto `hermanasemprendedoras`) | https://hermanasemprendedoras.netlify.app | ✅ Catálogo, login y panel probados |
-| CORS     | Render → `FRONT_URL` | `https://hermanasemprendedoras.netlify.app` | ⏳ Falta cargarlo (mientras tanto la API acepta cualquier origen) |
+| Base     | Neon (Postgres 16, AWS US East 1, con pooling) | — | ⚠️ Confirmar que se vació para la Etapa 8 (ver abajo). Si `/catalogo` en producción no muestra las 5 categorías nuevas, falta ese paso |
+| API      | Render (Blueprint `render.yaml`) | https://hermanas-api.onrender.com | ✅ `DATABASE_URL`, `ADMIN_PASSWORD_HASH`, `JWT_SECRET`, `FRONT_URL` cargados |
+| Front    | Netlify (proyecto `hermanasemprendedoras`) | https://hermanasemprendedoras.netlify.app | ✅ Tienda nueva con carrito (commit adf5c46). Falta mirarla publicada |
+| CORS     | Render → `FRONT_URL` | `https://hermanasemprendedoras.netlify.app` | ✅ Cargado |
+| Fotos    | Cloudinary → Render `CLOUDINARY_URL` | — | ⏳ Falta crear la cuenta y cargar la variable (ver "Fotos de las variedades") |
+| WhatsApp | `whatsapp` en `hermanas-web/src/environments/*.ts` | 5492494382000 | ⏳ Es el número de prueba; cambiar por el del local y hacer push |
 | Dominio  | DigitalPlat + Cloudflare | `hermanas.dpdns.org` (o el que esté libre) | ⏳ Pendiente (paso 6) |
 
-Los pasos 0 a 5 de abajo ya están hechos; quedan como referencia.
+Los pasos 0 a 5 de abajo ya están hechos; quedan como referencia. Lo que cambia la base
+(tablas nuevas, columnas) se aplica solo al arrancar la API (`synchronize`); solo hubo que
+vaciar Neon en la Etapa 8. La Etapa 9 (tienda/pedidos web/fotos) solo AGREGA tablas y columnas. Los arreglos del 28/10
+también: agregan `encargue.retiro` (puede quedar vacío) y cambian la regla de borrado de
+`detalle_pedido_web → variedad` (de CASCADE a bloquear). No hace falta vaciar Neon.
 
 ---
 

@@ -14,8 +14,18 @@ th {
 }
 
 // Miniatura de la foto de cada variedad (4:3, como en la tienda).
-.miniatura { width: 64px; height: 48px; border-radius: 8px; object-fit: cover; flex: none; }
+.miniatura { width: 40px; height: 30px; border-radius: 6px; object-fit: cover; flex: none; }
 .sin-foto {
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--salvia-claro); color: var(--verde-oscuro); font-size: .7rem; font-weight: 700;
 }
+
+// Pantalla compacta: muchas filas con campos, así que menos aire entre todo.
+:host { display: block; }
+.panel { padding: 0.75rem 0.9rem; }
+.table { --bs-table-bg: transparent; margin-bottom: 0; }
+.table > :not(caption) > * > * { padding: 0.2rem 0.3rem; }
+.form-control-sm, .form-select-sm { min-height: 30px; padding-top: 0.15rem; padding-bottom: 0.15rem; }
+.btn-sm { padding: 0.15rem 0.55rem; }
+.form-label { margin-bottom: 0.15rem !important; }
+.sin-foto { font-size: 0.6rem; line-height: 1.1; text-align: center; }

@@ -72,6 +72,7 @@ export class EncarguesService {
       const encargue = await manager.save(Encargue, {
         cliente: dto.cliente,
         telefono: dto.telefono,
+        retiro: dto.retiro ?? null,
       });
       await manager.save(
         DetalleEncargue,
@@ -271,6 +272,7 @@ export class EncarguesService {
           encargueId: d.encargueId,
           cliente: d.encargue.cliente,
           telefono: d.encargue.telefono,
+          retiro: d.encargue.retiro,
           fecha: d.encargue.fecha,
           presentacion: d.presentacion?.nombre ?? '',
           cantidad: d.cantidad,

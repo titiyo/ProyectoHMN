@@ -16,16 +16,28 @@ import { validarCampos, validarTexto } from '../common/validaciones';
 import { validarDetalles } from '../common/detalles';
 import { EstadoEncargue } from './entities/encargue.entity';
 
+// Retiro opcional: vacío o null = sin fecha; si viene, texto de hasta 80 caracteres.
+function validarRetiro(valor: unknown): string | null {
+  if (valor === null || valor === undefined || (typeof valor === 'string' && valor.trim() === '')) {
+    return null;
+  }
+  if (typeof valor !== 'string' || valor.trim().length > 80) {
+    throw new BadRequestException('retiro debe ser un texto de hasta 80 caracteres');
+  }
+  return valor.trim();
+}
+
 @Controller('encargues')
 export class EncarguesController {
   constructor(private readonly encarguesService: EncarguesService) {}
 
   @Post()
   create(@Body() dto: CreateEncargueDto) {
-    validarCampos(dto, ['cliente', 'telefono', 'detalles']);
+    validarCampos(dto, ['cliente', 'telefono', 'retiro', 'detalles']);
     return this.encarguesService.create({
       cliente: validarTexto(dto.cliente, 'cliente'),
       telefono: validarTexto(dto.telefono, 'telefono'),
+      retiro: validarRetiro(dto.retiro),
       detalles: validarDetalles(dto.detalles),
     });
   }
@@ -58,8 +70,9 @@ export class EncarguesController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateEncargueDto,
   ) {
-    validarCampos(dto, ['cliente', 'telefono']);
+    validarCampos(dto, ['cliente', 'telefono', 'retiro']);
     const limpio: UpdateEncargueDto = {};
+    if (dto.retiro !== undefined) limpio.retiro = validarRetiro(dto.retiro);
     if (dto.cliente !== undefined) limpio.cliente = validarTexto(dto.cliente, 'cliente');
     if (dto.telefono !== undefined) {
       limpio.telefono = validarTexto(dto.telefono, 'telefono');

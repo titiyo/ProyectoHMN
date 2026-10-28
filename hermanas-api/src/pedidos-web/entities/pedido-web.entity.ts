@@ -68,7 +68,9 @@ export class DetallePedidoWeb {
   @Column({ name: 'variedad_id' })
   variedadId!: number;
 
-  @ManyToOne(() => Variedad, { onDelete: 'CASCADE' })
+  // Sin CASCADE: el pedido es un registro de lo que pidió el cliente y no debe vaciarse
+  // en silencio. Por eso borrar una variedad que está en un pedido da 409.
+  @ManyToOne(() => Variedad)
   @JoinColumn({ name: 'variedad_id' })
   variedad!: Variedad;
 

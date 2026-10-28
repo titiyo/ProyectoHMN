@@ -115,6 +115,7 @@ export class Encargues implements OnInit {
       .crear({
         cliente: n.cliente.trim(),
         telefono: n.telefono.trim(),
+        retiro: n.retiro.trim() || null,
         detalles: n.detalles.map((d) => ({
           variedadId: d.variedadId!,
           presentacionId: d.presentacionId!,
@@ -152,6 +153,7 @@ export class Encargues implements OnInit {
     return {
       cliente: '',
       telefono: '',
+      retiro: '',
       detalles: [{ variedadId: null, presentacionId: null, cantidad: 1 }] as RenglonAlta[],
     };
   }

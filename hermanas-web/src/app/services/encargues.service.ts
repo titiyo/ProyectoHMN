@@ -25,7 +25,7 @@ export class EncarguesService {
     return this.http.get<Encargue[]>(this.url, { params });
   }
 
-  crear(datos: { cliente: string; telefono: string; detalles: RenglonPedido[] }) {
+  crear(datos: { cliente: string; telefono: string; retiro: string | null; detalles: RenglonPedido[] }) {
     return this.http
       .post<Encargue>(this.url, datos)
       .pipe(tap(() => this.cargarPorHacer()));
