@@ -6,17 +6,17 @@ antes de pasar al siguiente. Todo en planes gratis.
 > La base de producción arranca vacía: el seed carga las categorías y variedades,
 > pero **sin precios ni stock**. Los datos de prueba de tu compu no se suben.
 
-## Estado (28/10/2026)
+## Estado (01/11/2026)
 
 | Parte    | Servicio | URL / dato | Estado |
 |----------|----------|------------|--------|
 | Base     | Neon (Postgres 16, AWS US East 1, con pooling) | — | ⚠️ Confirmar que se vació para la Etapa 8 (ver abajo). Si `/catalogo` en producción no muestra las 5 categorías nuevas, falta ese paso |
 | API      | Render (Blueprint `render.yaml`) | https://hermanas-api.onrender.com | ✅ `DATABASE_URL`, `ADMIN_PASSWORD_HASH`, `JWT_SECRET`, `FRONT_URL` cargados |
 | Front    | Netlify (proyecto `hermanasemprendedoras`) | https://hermanasemprendedoras.netlify.app | ✅ Tienda nueva con carrito (commit adf5c46). Falta mirarla publicada |
-| CORS     | Render → `FRONT_URL` | `https://hermanasemprendedoras.netlify.app` | ✅ Cargado |
+| CORS     | Render → `FRONT_URL` | lista separada por comas (ver paso 6) | ⏳ Cambiar a los 3 dominios del front cuando el deploy esté **Live** |
 | Fotos    | Cloudinary → Render `CLOUDINARY_URL` | — | ⏳ Falta crear la cuenta y cargar la variable (ver "Fotos de las variedades") |
 | WhatsApp | `whatsapp` en `hermanas-web/src/environments/*.ts` | 5492494382000 | ⏳ Es el número de prueba; cambiar por el del local y hacer push |
-| Dominio  | DigitalPlat + Cloudflare | `hermanas.dpdns.org` (o el que esté libre) | ⏳ Pendiente (paso 6) |
+| Dominio  | DigitalPlat + Cloudflare | https://hermanasemprendedoras.dpdns.org (primario) | ⏳ Registrado, DNS en Cloudflare y Primary domain en Netlify; falta que propaguen los nameservers (paso 6) |
 
 Los pasos 0 a 5 de abajo ya están hechos; quedan como referencia. Lo que cambia la base
 (tablas nuevas, columnas) se aplica solo al arrancar la API (`synchronize`); solo hubo que
@@ -129,27 +129,43 @@ Copiá el resultado (empieza con `$2b$10$...`). Usá una contraseña distinta a 
 
 ## 6. Dominio (DigitalPlat + Cloudflare)
 
-1. Buscar "DigitalPlat FreeDomain" (sitio oficial: digitalplat.org) → crear cuenta (email + GitHub) → registrar
-   `hermanas.dpdns.org` (o el nombre que esté libre).
-2. <https://dash.cloudflare.com> → **Add a domain** → `hermanas.dpdns.org` → plan **Free**.
-   Cloudflare te da **dos nameservers**.
-3. En DigitalPlat, pegar esos dos nameservers en el dominio. Esperar 5–15 min hasta que
-   Cloudflare diga **Active**.
-4. Cloudflare → **DNS → Records**, crear dos CNAME, ambos con **Proxy status: DNS only**
-   (nube gris; si queda naranja, Netlify y Render no pueden emitir el certificado HTTPS):
+Dominio: **`hermanasemprendedoras.dpdns.org`** (DigitalPlat, gratis).
 
-   | Tipo  | Nombre | Destino                       |
-   |-------|--------|-------------------------------|
+Dominios del front:
+
+- https://hermanasemprendedoras.dpdns.org → **primario** (Primary domain en Netlify)
+- https://www.hermanasemprendedoras.dpdns.org → redirige al primario
+- https://hermanasemprendedoras.netlify.app → Netlify lo redirige al primario cuando el dominio esté activo
+
+Pasos (1 a 4 ya hechos el 01/11; falta que propaguen los nameservers):
+
+1. DigitalPlat (digitalplat.org) → registrar `hermanasemprendedoras.dpdns.org`.
+2. <https://dash.cloudflare.com> → **Add a domain** → plan **Free** → Cloudflare da **dos
+   nameservers** → pegarlos en DigitalPlat. Puede tardar hasta que Cloudflare diga **Active**.
+3. Cloudflare → **DNS → Records**, todos con **Proxy status: DNS only** (nube gris; si queda
+   naranja, Netlify y Render no pueden emitir el certificado HTTPS):
+
+   | Tipo  | Nombre | Destino                             |
+   |-------|--------|-------------------------------------|
    | CNAME | `@`    | `hermanasemprendedoras.netlify.app` |
-   | CNAME | `api`  | `hermanas-api.onrender.com`   |
+   | CNAME | `www`  | `hermanasemprendedoras.netlify.app` |
+   | CNAME | `api`  | `hermanas-api.onrender.com`         |
 
-5. Netlify → **Domain management → Add a domain** → `hermanas.dpdns.org`.
-   Render → servicio → **Settings → Custom Domains** → `api.hermanas.dpdns.org`.
-   Esperar a que los dos muestren el certificado como emitido.
-6. Pasar el front al dominio:
-   - `hermanas-web/src/environments/environment.ts` → `apiUrl: 'https://api.hermanas.dpdns.org'`
-   - Render → `FRONT_URL` = `https://hermanasemprendedoras.netlify.app,https://hermanas.dpdns.org`
-   - commit + push (Netlify y Render se redeployan solos).
+4. Netlify → **Domain management** → `hermanasemprendedoras.dpdns.org` como **Primary domain**
+   (Netlify suma `www` solo y lo redirige). Esperar el certificado HTTPS.
+5. **CORS**: cuando el deploy de la API esté **Live**, Render → **Environment** → `FRONT_URL` =
+
+   ```
+   https://hermanasemprendedoras.netlify.app,https://hermanasemprendedoras.dpdns.org,https://www.hermanasemprendedoras.dpdns.org
+   ```
+
+   Formato de `FRONT_URL`: lista separada por comas. A cada valor se le hace trim y se le
+   saca la barra final; los vacíos se ignoran. Si está vacía, la API acepta cualquier origen
+   (solo para desarrollo). Un dominio que no está en la lista queda bloqueado por el navegador.
+6. Opcional, más adelante: API en `api.hermanasemprendedoras.dpdns.org`. Render → **Settings →
+   Custom Domains** → agregarlo y esperar el certificado; después cambiar `apiUrl` en
+   `hermanas-web/src/environments/environment.ts` y hacer push. Mientras tanto el front sigue
+   usando `https://hermanas-api.onrender.com`, que funciona igual.
 
 ---
 
